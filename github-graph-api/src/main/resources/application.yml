@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: github-graph-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/github_graph}
+    username: ${SPRING_DATASOURCE_USERNAME:github_graph}
+    password: ${SPRING_DATASOURCE_PASSWORD:github_graph}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  neo4j:
+    uri: ${SPRING_NEO4J_URI:bolt://localhost:7687}
+    authentication:
+      username: ${SPRING_NEO4J_AUTHENTICATION_USERNAME:neo4j}
+      password: ${SPRING_NEO4J_AUTHENTICATION_PASSWORD:githubgraph}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+github-graph:
+  analysis:
+    base-url: ${ANALYSIS_BASE_URL:http://localhost:8000}
+  clone:
+    root: ${REPOSITORY_CLONE_ROOT:/tmp/github-graph/repos}

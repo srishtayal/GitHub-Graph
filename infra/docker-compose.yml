@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH}
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+  analysis:
+    build:
+      context: ../github-graph-analysis
+    ports:
+      - "${ANALYSIS_PORT}:8000"
+    volumes:
+      - repo-cache:/workspace/repos
+
+  api:
+    build:
+      context: ../github-graph-api
+    depends_on:
+      - postgres
+      - neo4j
+      - analysis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: githubgraph
+      ANALYSIS_BASE_URL: http://analysis:8000
+      REPOSITORY_CLONE_ROOT: /workspace/repos
+    ports:
+      - "${API_PORT}:8080"
+    volumes:
+      - repo-cache:/workspace/repos
+
+  web:
+    build:
+      context: ../github-graph-web
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_PORT}
+    ports:
+      - "${WEB_PORT}:3000"
+
+volumes:
+  postgres-data:
+  neo4j-data:
+  repo-cache:
