@@ -23,10 +23,28 @@ class FileMetadata(BaseModel):
     isBinary: bool
 
 
-class ManifestMetadata(BaseModel):
-    manifestType: str
+class DirectoryMetadata(BaseModel):
     relativePath: str
-    metadata: dict[str, Any]
+    name: str
+    parentPath: str | None = None
+
+
+class SymbolMetadata(BaseModel):
+    relativePath: str
+    symbolType: str
+    name: str
+    qualifiedName: str | None = None
+    language: str | None = None
+    startLine: int | None = None
+    endLine: int | None = None
+    parentSymbolName: str | None = None
+
+
+class ImportMetadata(BaseModel):
+    relativePath: str
+    importValue: str
+    importType: str | None = None
+    resolvedPath: str | None = None
 
 
 class GraphPayload(BaseModel):
@@ -39,6 +57,8 @@ class AnalysisJobResponse(BaseModel):
     status: str
     snapshot: SnapshotSummary
     summary: AnalysisSummary
+    directories: list[DirectoryMetadata]
     files: list[FileMetadata]
-    manifests: list[ManifestMetadata]
+    symbols: list[SymbolMetadata]
+    imports: list[ImportMetadata]
     graph: GraphPayload

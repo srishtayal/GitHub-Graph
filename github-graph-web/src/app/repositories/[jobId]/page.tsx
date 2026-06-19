@@ -1,16 +1,18 @@
 import { IngestionStatus } from "@/components/ingestion-status/ingestion-status";
-import { MetadataSummary } from "@/components/metadata-summary/metadata-summary";
+import { ResultSummary } from "@/components/result-summary/result-summary";
 
-export default function RepositoryJobPage({
+export default async function RepositoryJobPage({
   params
 }: {
-  params: { jobId: string };
+  params: Promise<{ jobId: string }>;
 }) {
+  const { jobId } = await params;
+
   return (
     <main className="page-shell">
       <section className="details-layout">
-        <IngestionStatus jobId={params.jobId} />
-        <MetadataSummary />
+        <IngestionStatus jobId={jobId} />
+        <ResultSummary jobId={jobId} />
       </section>
     </main>
   );

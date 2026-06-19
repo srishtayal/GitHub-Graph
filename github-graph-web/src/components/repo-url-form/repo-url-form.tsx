@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createIngestion } from "@/lib/api-client";
 
 export function RepoUrlForm() {
+  const router = useRouter();
   const [githubUrl, setGithubUrl] = useState("");
   const [message, setMessage] = useState("Ready to accept a public repository URL.");
 
@@ -18,8 +20,9 @@ export function RepoUrlForm() {
     try {
       const result = await createIngestion(githubUrl.trim());
       setMessage(`Created ingestion job ${result.jobId} with status ${result.status}.`);
+      router.push(`/repositories/${result.jobId}`);
     } catch {
-      setMessage("Backend wiring comes next. The form contract is in place.");
+      setMessage("Unable to start ingestion. Check the backend response and try again.");
     }
   }
 

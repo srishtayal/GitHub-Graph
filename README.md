@@ -22,7 +22,7 @@ This workspace now contains:
 
 ## Next build steps
 
-1. implement GitHub URL validation
+1. implement GitHub URL validation - done
 2. implement backend clone workflow
 3. connect backend to FastAPI analysis service
 4. persist job and snapshot state in PostgreSQL

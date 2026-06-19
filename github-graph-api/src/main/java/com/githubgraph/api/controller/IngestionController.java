@@ -3,7 +3,7 @@ package com.githubgraph.api.controller;
 import com.githubgraph.api.dto.CreateIngestionRequest;
 import com.githubgraph.api.dto.CreateIngestionResponse;
 import com.githubgraph.api.dto.IngestionJobResponse;
-import com.githubgraph.api.service.IngestionService;
+import com.githubgraph.api.service.IngestionOrchestratorService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class IngestionController {
 
-    private final IngestionService ingestionService;
+    private final IngestionOrchestratorService ingestionService;
 
-    public IngestionController(IngestionService ingestionService) {
+    public IngestionController(IngestionOrchestratorService ingestionService) {
         this.ingestionService = ingestionService;
     }
 

@@ -54,6 +54,31 @@ body {
   padding: 24px;
 }
 
+.result-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.list-block ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent);
