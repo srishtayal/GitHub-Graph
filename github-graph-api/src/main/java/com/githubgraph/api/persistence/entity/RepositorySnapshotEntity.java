@@ -10,6 +10,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "repository_snapshots")
@@ -51,6 +54,8 @@ public class RepositorySnapshotEntity {
     private int totalDirectories;
 
     @Column(name = "language_summary_json", nullable = false, columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String languageSummaryJson;
 
     @Column(name = "created_at", nullable = false)

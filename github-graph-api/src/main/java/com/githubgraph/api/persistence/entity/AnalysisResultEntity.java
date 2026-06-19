@@ -10,6 +10,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "analysis_results")
@@ -30,6 +33,8 @@ public class AnalysisResultEntity {
     private String resultVersion;
 
     @Column(name = "payload_json", nullable = false, columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String payloadJson;
 
     @Column(name = "created_at", nullable = false)

@@ -27,7 +27,9 @@ public class AnalysisClientService {
     public AnalysisClientService(AppProperties properties, ObjectMapper objectMapper) {
         this.baseUrl = properties.analysis().baseUrl();
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
     }
 
     public AnalysisServiceResponse analyze(AnalysisServiceRequest request) {
