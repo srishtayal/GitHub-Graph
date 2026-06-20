@@ -1,5 +1,6 @@
 package com.githubgraph.api.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.githubgraph.api.dto.FileSummaryResponse;
 import com.githubgraph.api.dto.ImportSummaryResponse;
 import com.githubgraph.api.dto.RepositorySummaryResponse;
@@ -38,5 +39,10 @@ public class RepositoryController {
     @GetMapping("/{repositoryId}/imports")
     public ImportSummaryResponse getImports(@PathVariable String repositoryId) {
         return ingestionService.getRepositoryImports(repositoryId);
+    }
+
+    @GetMapping("/{repositoryId}/analysis")
+    public JsonNode getAnalysis(@PathVariable String repositoryId) {
+        return ingestionService.getRepositoryAnalysis(repositoryId);
     }
 }

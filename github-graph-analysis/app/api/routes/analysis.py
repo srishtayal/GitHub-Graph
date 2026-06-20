@@ -9,7 +9,7 @@ router = APIRouter(prefix="/internal/v1")
 
 @router.post("/analysis-jobs", response_model=AnalysisJobResponse)
 def analyze_repository(request: AnalysisJobRequest) -> AnalysisJobResponse:
-    directories, files, symbols, imports = scan_repository(request.localPath)
+    directories, files, parsed = scan_repository(request.localPath)
     language_summary: dict[str, int] = {}
     for item in files:
         if item.language:
@@ -22,11 +22,23 @@ def analyze_repository(request: AnalysisJobRequest) -> AnalysisJobResponse:
         summary={
             "totalFiles": len(files),
             "totalDirectories": len(directories),
-            "languageSummary": language_summary
+            "languageSummary": language_summary,
+            "totalClasses": len(parsed.classes),
+            "totalFunctions": len(parsed.functions),
+            "totalMethodCalls": len(parsed.method_calls),
+            "totalApiRoutes": len(parsed.api_routes),
+            "totalModuleDependencies": len(parsed.module_dependencies),
         },
         directories=directories,
         files=files,
-        symbols=symbols,
-        imports=imports,
+        codeFiles=parsed.code_files,
+        symbols=parsed.symbols,
+        imports=parsed.imports,
+        classes=parsed.classes,
+        functions=parsed.functions,
+        methodCalls=parsed.method_calls,
+        inheritance=parsed.inheritance,
+        apiRoutes=parsed.api_routes,
+        moduleDependencies=parsed.module_dependencies,
         graph={"nodes": [], "edges": []}
     )

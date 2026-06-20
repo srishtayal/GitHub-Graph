@@ -1,6 +1,7 @@
 package com.githubgraph.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.githubgraph.api.domain.ingestion.IngestionJobStatus;
 import com.githubgraph.api.dto.AnalysisServiceRequest;
@@ -167,6 +168,17 @@ public class IngestionOrchestratorService {
         return new ImportSummaryResponse(items);
     }
 
+    public JsonNode getRepositoryAnalysis(String repositoryId) {
+        RepositorySnapshotEntity snapshot = latestSnapshotFor(repositoryId);
+        AnalysisResultEntity result = analysisResultJpaRepository.findTopBySnapshotOrderByCreatedAtDesc(snapshot)
+                .orElseThrow(() -> new NotFoundException("Repository analysis not found"));
+        try {
+            return objectMapper.readTree(result.getPayloadJson());
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to deserialize analysis payload", exception);
+        }
+    }
+
     @Transactional
     public void processIngestion(UUID ingestionJobId) {
         IngestionJobEntity job = ingestionJobJpaRepository.findById(ingestionJobId)
@@ -288,7 +300,7 @@ public class IngestionOrchestratorService {
         AnalysisResultEntity resultEntity = new AnalysisResultEntity();
         resultEntity.setIngestionJob(job);
         resultEntity.setSnapshot(snapshot);
-        resultEntity.setResultVersion("phase-2");
+        resultEntity.setResultVersion("phase-3");
         resultEntity.setPayloadJson(writeJson(analysis));
         analysisResultJpaRepository.save(resultEntity);
     }

@@ -12,6 +12,11 @@ class AnalysisSummary(BaseModel):
     totalFiles: int
     totalDirectories: int
     languageSummary: dict[str, int]
+    totalClasses: int
+    totalFunctions: int
+    totalMethodCalls: int
+    totalApiRoutes: int
+    totalModuleDependencies: int
 
 
 class FileMetadata(BaseModel):
@@ -47,6 +52,71 @@ class ImportMetadata(BaseModel):
     resolvedPath: str | None = None
 
 
+class ClassMetadata(BaseModel):
+    relativePath: str
+    name: str
+    qualifiedName: str
+    bases: list[str]
+    startLine: int
+    endLine: int
+
+
+class FunctionMetadata(BaseModel):
+    relativePath: str
+    name: str
+    qualifiedName: str
+    functionType: str
+    parentClass: str | None = None
+    parameters: list[str]
+    isAsync: bool
+    startLine: int
+    endLine: int
+
+
+class MethodCallMetadata(BaseModel):
+    relativePath: str
+    caller: str | None = None
+    name: str
+    receiver: str | None = None
+    expression: str
+    startLine: int
+
+
+class InheritanceMetadata(BaseModel):
+    relativePath: str
+    childClass: str
+    parentClass: str
+    startLine: int
+
+
+class ApiRouteMetadata(BaseModel):
+    relativePath: str
+    framework: str
+    httpMethod: str
+    path: str
+    handler: str
+    startLine: int
+
+
+class ModuleDependencyMetadata(BaseModel):
+    sourcePath: str
+    targetModule: str
+    resolvedPath: str | None = None
+    dependencyType: str
+
+
+class CodeFileMetadata(BaseModel):
+    relativePath: str
+    language: str
+    classes: list[ClassMetadata]
+    functions: list[FunctionMetadata]
+    imports: list[ImportMetadata]
+    methodCalls: list[MethodCallMetadata]
+    inheritance: list[InheritanceMetadata]
+    apiRoutes: list[ApiRouteMetadata]
+    moduleDependencies: list[ModuleDependencyMetadata]
+
+
 class GraphPayload(BaseModel):
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
@@ -59,6 +129,13 @@ class AnalysisJobResponse(BaseModel):
     summary: AnalysisSummary
     directories: list[DirectoryMetadata]
     files: list[FileMetadata]
+    codeFiles: list[CodeFileMetadata]
     symbols: list[SymbolMetadata]
     imports: list[ImportMetadata]
+    classes: list[ClassMetadata]
+    functions: list[FunctionMetadata]
+    methodCalls: list[MethodCallMetadata]
+    inheritance: list[InheritanceMetadata]
+    apiRoutes: list[ApiRouteMetadata]
+    moduleDependencies: list[ModuleDependencyMetadata]
     graph: GraphPayload

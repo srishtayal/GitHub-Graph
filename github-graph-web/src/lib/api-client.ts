@@ -2,6 +2,7 @@ import { env } from "./env";
 import type {
   CreateIngestionResponse,
   IngestionJob,
+  RepositoryAnalysis,
   RepositoryFileList,
   RepositorySummary,
   RepositorySymbolList
@@ -66,6 +67,18 @@ export async function getRepositorySymbols(repositoryId: string): Promise<Reposi
 
   if (!response.ok) {
     throw new Error("Unable to fetch repository symbols");
+  }
+
+  return response.json();
+}
+
+export async function getRepositoryAnalysis(repositoryId: string): Promise<RepositoryAnalysis> {
+  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}/analysis`, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to fetch repository analysis");
   }
 
   return response.json();
