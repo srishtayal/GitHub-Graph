@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SnapshotSummary(BaseModel):
@@ -117,9 +117,24 @@ class CodeFileMetadata(BaseModel):
     moduleDependencies: list[ModuleDependencyMetadata]
 
 
+class GraphNode(BaseModel):
+    id: str
+    type: str
+    label: str
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    type: str
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
 class GraphPayload(BaseModel):
-    nodes: list[dict[str, Any]]
-    edges: list[dict[str, Any]]
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
 
 
 class AnalysisJobResponse(BaseModel):
