@@ -10,8 +10,15 @@ public record AnalysisServiceResponse(
         Summary summary,
         List<DirectoryItem> directories,
         List<FileItem> files,
+        List<Map<String, Object>> codeFiles,
         List<SymbolItem> symbols,
         List<ImportItem> imports,
+        List<Map<String, Object>> classes,
+        List<Map<String, Object>> functions,
+        List<Map<String, Object>> methodCalls,
+        List<Map<String, Object>> inheritance,
+        List<Map<String, Object>> apiRoutes,
+        List<Map<String, Object>> moduleDependencies,
         Graph graph
 ) {
     public record Snapshot(
@@ -23,7 +30,12 @@ public record AnalysisServiceResponse(
     public record Summary(
             int totalFiles,
             int totalDirectories,
-            Map<String, Integer> languageSummary
+            Map<String, Integer> languageSummary,
+            int totalClasses,
+            int totalFunctions,
+            int totalMethodCalls,
+            int totalApiRoutes,
+            int totalModuleDependencies
     ) {
     }
 

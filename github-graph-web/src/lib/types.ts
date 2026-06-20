@@ -51,3 +51,72 @@ export type RepositorySymbolList = {
     endLine: number | null;
   }>;
 };
+
+export type RepositoryAnalysis = {
+  ingestionJobId: string;
+  status: string;
+  summary: {
+    totalFiles: number;
+    totalDirectories: number;
+    languageSummary: Record<string, number>;
+    totalClasses: number;
+    totalFunctions: number;
+    totalMethodCalls: number;
+    totalApiRoutes: number;
+    totalModuleDependencies: number;
+  };
+  codeFiles: Array<{
+    relativePath: string;
+    language: string | null;
+    classes: string[];
+    functions: string[];
+    imports: string[];
+  }>;
+  classes: Array<{
+    relativePath: string;
+    name: string;
+    qualifiedName: string;
+    startLine: number;
+    endLine: number;
+    bases: string[];
+  }>;
+  functions: Array<{
+    relativePath: string;
+    name: string;
+    qualifiedName: string;
+    functionType: string;
+    parentClass: string | null;
+    startLine: number;
+    endLine: number;
+    parameters: string[];
+    isAsync: boolean;
+  }>;
+  methodCalls: Array<{
+    relativePath: string;
+    name: string;
+    startLine: number;
+    caller: string | null;
+    receiver: string | null;
+    expression: string;
+  }>;
+  inheritance: Array<{
+    relativePath: string;
+    childClass: string;
+    parentClass: string;
+    startLine: number;
+  }>;
+  apiRoutes: Array<{
+    relativePath: string;
+    framework: string;
+    httpMethod: string;
+    path: string;
+    handler: string;
+    startLine: number;
+  }>;
+  moduleDependencies: Array<{
+    sourcePath: string;
+    targetModule: string;
+    resolvedPath: string | null;
+    dependencyType: string;
+  }>;
+};

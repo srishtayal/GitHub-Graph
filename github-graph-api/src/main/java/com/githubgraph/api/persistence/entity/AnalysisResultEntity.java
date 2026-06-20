@@ -63,4 +63,8 @@ public class AnalysisResultEntity {
     public void setPayloadJson(String payloadJson) {
         this.payloadJson = payloadJson;
     }
+
+    public String getPayloadJson() {
+        return payloadJson;
+    }
 }
