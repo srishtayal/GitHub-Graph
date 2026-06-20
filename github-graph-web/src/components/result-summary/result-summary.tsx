@@ -143,9 +143,9 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                 <div className="list-block">
                   <span className="metric-label">Sample Classes</span>
                   <ul>
-                    {analysis.classes.slice(0, 6).map((item) => (
-                      <li key={`${item.file}:${item.qualifiedName}:${item.startLine}`}>
-                        {item.qualifiedName} in {item.file}
+                    {analysis.classes.slice(0, 6).map((item, index) => (
+                      <li key={`${item.relativePath}:${item.qualifiedName}:${item.startLine}:${index}`}>
+                        {item.qualifiedName} in {item.relativePath}
                       </li>
                     ))}
                     {analysis.classes.length === 0 ? <li>No classes extracted.</li> : null}
@@ -154,8 +154,8 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                 <div className="list-block">
                   <span className="metric-label">Sample Functions</span>
                   <ul>
-                    {analysis.functions.slice(0, 6).map((item) => (
-                      <li key={`${item.file}:${item.qualifiedName}:${item.startLine}`}>
+                    {analysis.functions.slice(0, 6).map((item, index) => (
+                      <li key={`${item.relativePath}:${item.qualifiedName}:${item.startLine}:${index}`}>
                         {item.isAsync ? "async " : ""}
                         {item.qualifiedName}({item.parameters.join(", ")})
                       </li>
@@ -166,9 +166,9 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                 <div className="list-block">
                   <span className="metric-label">API Routes</span>
                   <ul>
-                    {analysis.apiRoutes.slice(0, 6).map((route) => (
-                      <li key={`${route.file}:${route.method}:${route.path}:${route.line}`}>
-                        {route.method} {route.path}
+                    {analysis.apiRoutes.slice(0, 6).map((route, index) => (
+                      <li key={`${route.relativePath}:${route.httpMethod}:${route.path}:${route.startLine}:${index}`}>
+                        {route.httpMethod} {route.path}
                         {" -> "}
                         {route.handler}
                       </li>
@@ -179,11 +179,13 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                 <div className="list-block">
                   <span className="metric-label">Module Dependencies</span>
                   <ul>
-                    {analysis.moduleDependencies.slice(0, 6).map((dependency) => (
-                      <li key={`${dependency.sourceFile}:${dependency.targetModule}:${dependency.targetFile ?? "external"}`}>
-                        {dependency.sourceFile}
+                    {analysis.moduleDependencies.slice(0, 6).map((dependency, index) => (
+                      <li
+                        key={`${dependency.sourcePath}:${dependency.targetModule}:${dependency.resolvedPath ?? "external"}:${index}`}
+                      >
+                        {dependency.sourcePath}
                         {" -> "}
-                        {dependency.targetFile ?? dependency.targetModule}
+                        {dependency.resolvedPath ?? dependency.targetModule}
                       </li>
                     ))}
                     {analysis.moduleDependencies.length === 0 ? <li>No module dependencies extracted.</li> : null}

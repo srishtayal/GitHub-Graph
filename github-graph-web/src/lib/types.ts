@@ -73,43 +73,50 @@ export type RepositoryAnalysis = {
     imports: string[];
   }>;
   classes: Array<{
+    relativePath: string;
     name: string;
     qualifiedName: string;
-    file: string;
     startLine: number;
+    endLine: number;
     bases: string[];
   }>;
   functions: Array<{
+    relativePath: string;
     name: string;
     qualifiedName: string;
-    file: string;
+    functionType: string;
+    parentClass: string | null;
     startLine: number;
-    className: string | null;
+    endLine: number;
     parameters: string[];
     isAsync: boolean;
   }>;
   methodCalls: Array<{
+    relativePath: string;
     name: string;
-    file: string;
-    line: number;
+    startLine: number;
     caller: string | null;
+    receiver: string | null;
+    expression: string;
   }>;
   inheritance: Array<{
-    className: string;
-    baseClass: string;
-    file: string;
+    relativePath: string;
+    childClass: string;
+    parentClass: string;
+    startLine: number;
   }>;
   apiRoutes: Array<{
-    method: string;
+    relativePath: string;
+    framework: string;
+    httpMethod: string;
     path: string;
     handler: string;
-    file: string;
-    line: number;
+    startLine: number;
   }>;
   moduleDependencies: Array<{
-    sourceFile: string;
+    sourcePath: string;
     targetModule: string;
-    targetFile: string | null;
+    resolvedPath: string | null;
     dependencyType: string;
   }>;
 };
