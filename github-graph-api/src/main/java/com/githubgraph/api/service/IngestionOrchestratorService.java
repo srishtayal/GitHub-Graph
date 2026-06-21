@@ -169,14 +169,16 @@ public class IngestionOrchestratorService {
     }
 
     public JsonNode getRepositoryAnalysis(String repositoryId) {
-        RepositorySnapshotEntity snapshot = latestSnapshotFor(repositoryId);
-        AnalysisResultEntity result = analysisResultJpaRepository.findTopBySnapshotOrderByCreatedAtDesc(snapshot)
-                .orElseThrow(() -> new NotFoundException("Repository analysis not found"));
-        try {
-            return objectMapper.readTree(result.getPayloadJson());
-        } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Failed to deserialize analysis payload", exception);
+        return loadLatestAnalysisPayload(repositoryId);
+    }
+
+    public JsonNode getRepositoryGraph(String repositoryId) {
+        JsonNode analysisPayload = loadLatestAnalysisPayload(repositoryId);
+        JsonNode graph = analysisPayload.get("graph");
+        if (graph == null || graph.isNull()) {
+            throw new IllegalStateException("Repository graph not found");
         }
+        return graph;
     }
 
     @Transactional
@@ -300,7 +302,7 @@ public class IngestionOrchestratorService {
         AnalysisResultEntity resultEntity = new AnalysisResultEntity();
         resultEntity.setIngestionJob(job);
         resultEntity.setSnapshot(snapshot);
-        resultEntity.setResultVersion("phase-3");
+        resultEntity.setResultVersion("phase-4");
         resultEntity.setPayloadJson(writeJson(analysis));
         analysisResultJpaRepository.save(resultEntity);
     }
@@ -365,6 +367,17 @@ public class IngestionOrchestratorService {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize JSON payload", exception);
+        }
+    }
+
+    private JsonNode loadLatestAnalysisPayload(String repositoryId) {
+        RepositorySnapshotEntity snapshot = latestSnapshotFor(repositoryId);
+        AnalysisResultEntity result = analysisResultJpaRepository.findTopBySnapshotOrderByCreatedAtDesc(snapshot)
+                .orElseThrow(() -> new NotFoundException("Repository analysis not found"));
+        try {
+            return objectMapper.readTree(result.getPayloadJson());
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to deserialize analysis payload", exception);
         }
     }
 

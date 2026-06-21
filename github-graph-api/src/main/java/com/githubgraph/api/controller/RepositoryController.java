@@ -45,4 +45,9 @@ public class RepositoryController {
     public JsonNode getAnalysis(@PathVariable String repositoryId) {
         return ingestionService.getRepositoryAnalysis(repositoryId);
     }
+
+    @GetMapping("/{repositoryId}/graph")
+    public JsonNode getGraph(@PathVariable String repositoryId) {
+        return ingestionService.getRepositoryGraph(repositoryId);
+    }
 }
