@@ -17,6 +17,8 @@ class AnalysisSummary(BaseModel):
     totalMethodCalls: int
     totalApiRoutes: int
     totalModuleDependencies: int
+    totalGraphNodes: int
+    totalGraphEdges: int
 
 
 class FileMetadata(BaseModel):

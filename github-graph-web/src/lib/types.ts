@@ -64,6 +64,8 @@ export type RepositoryAnalysis = {
     totalMethodCalls: number;
     totalApiRoutes: number;
     totalModuleDependencies: number;
+    totalGraphNodes: number;
+    totalGraphEdges: number;
   };
   codeFiles: Array<{
     relativePath: string;
@@ -118,5 +120,21 @@ export type RepositoryAnalysis = {
     targetModule: string;
     resolvedPath: string | null;
     dependencyType: string;
+  }>;
+};
+
+export type RepositoryGraph = {
+  nodes: Array<{
+    id: string;
+    type: string;
+    label: string;
+    properties: Record<string, unknown>;
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    type: string;
+    properties: Record<string, unknown>;
   }>;
 };

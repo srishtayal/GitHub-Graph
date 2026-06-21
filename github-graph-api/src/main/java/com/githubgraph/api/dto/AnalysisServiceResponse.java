@@ -35,7 +35,9 @@ public record AnalysisServiceResponse(
             int totalFunctions,
             int totalMethodCalls,
             int totalApiRoutes,
-            int totalModuleDependencies
+            int totalModuleDependencies,
+            int totalGraphNodes,
+            int totalGraphEdges
     ) {
     }
 

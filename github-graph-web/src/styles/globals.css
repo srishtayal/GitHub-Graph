@@ -88,6 +88,10 @@ body {
   background: var(--surface-alt);
 }
 
+.graph-card {
+  background: linear-gradient(180deg, #f9fbff 0%, #eef5ff 100%);
+}
+
 .phase-card .eyebrow,
 .phase-card .hint {
   margin: 0;
@@ -101,6 +105,14 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.graph-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.graph-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .eyebrow {
@@ -154,7 +166,9 @@ body {
   }
 
   .phase-metrics,
-  .phase-preview-grid {
+  .phase-preview-grid,
+  .graph-metrics,
+  .graph-preview-grid {
     grid-template-columns: 1fr;
   }
 

@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import {
   getIngestionJob,
   getRepositoryAnalysis,
+  getRepositoryGraph,
   getRepositoryFiles,
   getRepositorySummary,
   getRepositorySymbols
 } from "@/lib/api-client";
 import type {
   IngestionJob,
+  RepositoryGraph,
   RepositoryAnalysis,
   RepositoryFileList,
   RepositorySummary,
@@ -26,6 +28,7 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
   const [files, setFiles] = useState<RepositoryFileList | null>(null);
   const [symbols, setSymbols] = useState<RepositorySymbolList | null>(null);
   const [analysis, setAnalysis] = useState<RepositoryAnalysis | null>(null);
+  const [graph, setGraph] = useState<RepositoryGraph | null>(null);
   const [message, setMessage] = useState("Waiting for ingestion results.");
 
   useEffect(() => {
@@ -40,11 +43,12 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
         setJob(nextJob);
 
         if (nextJob.repositoryId && nextJob.status === "COMPLETED") {
-          const [nextSummary, nextFiles, nextSymbols, nextAnalysis] = await Promise.all([
+          const [nextSummary, nextFiles, nextSymbols, nextAnalysis, nextGraph] = await Promise.all([
             getRepositorySummary(nextJob.repositoryId),
             getRepositoryFiles(nextJob.repositoryId),
             getRepositorySymbols(nextJob.repositoryId),
-            getRepositoryAnalysis(nextJob.repositoryId)
+            getRepositoryAnalysis(nextJob.repositoryId),
+            getRepositoryGraph(nextJob.repositoryId)
           ]);
 
           if (!cancelled) {
@@ -52,6 +56,7 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
             setFiles(nextFiles);
             setSymbols(nextSymbols);
             setAnalysis(nextAnalysis);
+            setGraph(nextGraph);
             setMessage("Analysis results loaded.");
           }
           return;
@@ -75,6 +80,15 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
       window.clearInterval(intervalId);
     };
   }, [jobId]);
+
+  const graphNodeTypeCounts = graph
+    ? graph.nodes.reduce<Record<string, number>>((counts, node) => {
+        counts[node.type] = (counts[node.type] ?? 0) + 1;
+        return counts;
+      }, {})
+    : {};
+
+  const graphPreview = graph?.edges.slice(0, 6) ?? [];
 
   return (
     <section className="panel result-stack">
@@ -133,6 +147,14 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                   <span className="metric-label">Dependencies</span>
                   <strong>{analysis.summary.totalModuleDependencies}</strong>
                 </div>
+                <div>
+                  <span className="metric-label">Graph Nodes</span>
+                  <strong>{analysis.summary.totalGraphNodes}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">Graph Edges</span>
+                  <strong>{analysis.summary.totalGraphEdges}</strong>
+                </div>
               </div>
               {analysis.codeFiles.length === 0 ? (
                 <p className="hint">
@@ -189,6 +211,71 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
                       </li>
                     ))}
                     {analysis.moduleDependencies.length === 0 ? <li>No module dependencies extracted.</li> : null}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {graph ? (
+            <div className="phase-card graph-card">
+              <div>
+                <p className="eyebrow">Phase 4 Code Graph</p>
+                <p className="hint">
+                  Repository graph data returned by the backend graph endpoint, including nodes and relationship edges.
+                </p>
+              </div>
+              <div className="metric-grid phase-metrics graph-metrics">
+                <div>
+                  <span className="metric-label">Total Nodes</span>
+                  <strong>{graph.nodes.length}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">Total Edges</span>
+                  <strong>{graph.edges.length}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">Repo Nodes</span>
+                  <strong>{graphNodeTypeCounts.repo ?? 0}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">File Nodes</span>
+                  <strong>{graphNodeTypeCounts.file ?? 0}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">Class Nodes</span>
+                  <strong>{graphNodeTypeCounts.class ?? 0}</strong>
+                </div>
+                <div>
+                  <span className="metric-label">Function Nodes</span>
+                  <strong>{graphNodeTypeCounts.function ?? 0}</strong>
+                </div>
+              </div>
+              <div className="phase-preview-grid graph-preview-grid">
+                <div className="list-block">
+                  <span className="metric-label">Node Preview</span>
+                  <ul>
+                    {graph.nodes.slice(0, 6).map((node) => (
+                      <li key={node.id}>
+                        {node.type}: {node.label}
+                      </li>
+                    ))}
+                    {graph.nodes.length === 0 ? <li>No graph nodes available.</li> : null}
+                  </ul>
+                </div>
+                <div className="list-block">
+                  <span className="metric-label">Relationship Preview</span>
+                  <ul>
+                    {graphPreview.map((edge) => {
+                      const source = graph.nodes.find((node) => node.id === edge.source);
+                      const target = graph.nodes.find((node) => node.id === edge.target);
+
+                      return (
+                        <li key={edge.id}>
+                          {source?.label ?? edge.source} → {target?.label ?? edge.target} ({edge.type})
+                        </li>
+                      );
+                    })}
+                    {graph.edges.length === 0 ? <li>No graph relationships available.</li> : null}
                   </ul>
                 </div>
               </div>
