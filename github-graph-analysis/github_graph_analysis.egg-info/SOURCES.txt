@@ -5,6 +5,7 @@ app/main.py
 app/api/__init__.py
 app/api/routes/__init__.py
 app/api/routes/analysis.py
+app/api/routes/analytics.py
 app/api/routes/health.py
 app/core/__init__.py
 app/core/config.py
@@ -18,6 +19,7 @@ app/schemas/requests.py
 app/schemas/responses.py
 app/services/__init__.py
 app/services/filesystem_extractor.py
+app/services/graph_analyzer.py
 app/services/graph_planner.py
 app/services/language_detector.py
 app/services/repo_scanner.py
@@ -29,5 +31,7 @@ github_graph_analysis.egg-info/dependency_links.txt
 github_graph_analysis.egg-info/requires.txt
 github_graph_analysis.egg-info/top_level.txt
 tests/test_analysis_route.py
+tests/test_analytics_route.py
+tests/test_graph_analyzer.py
 tests/test_graph_planner.py
 tests/test_static_code_extractor.py

@@ -9,6 +9,7 @@ import com.githubgraph.api.service.IngestionOrchestratorService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -49,5 +50,14 @@ public class RepositoryController {
     @GetMapping("/{repositoryId}/graph")
     public JsonNode getGraph(@PathVariable String repositoryId) {
         return ingestionService.getRepositoryGraph(repositoryId);
+    }
+
+    @GetMapping("/{repositoryId}/analytics")
+    public JsonNode getAnalytics(
+            @PathVariable String repositoryId,
+            @RequestParam(required = false) String nodeId,
+            @RequestParam(required = false, defaultValue = "10") Integer maxDepth
+    ) {
+        return ingestionService.getRepositoryAnalytics(repositoryId, nodeId, maxDepth);
     }
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.githubgraph.api.domain.ingestion.IngestionJobStatus;
 import com.githubgraph.api.dto.AnalysisServiceRequest;
 import com.githubgraph.api.dto.AnalysisServiceResponse;
+import com.githubgraph.api.dto.GraphAnalyticsRequest;
 import com.githubgraph.api.dto.CreateIngestionRequest;
 import com.githubgraph.api.dto.CreateIngestionResponse;
 import com.githubgraph.api.dto.FileSummaryResponse;
@@ -56,6 +57,7 @@ public class IngestionOrchestratorService {
     private final GithubUrlValidator githubUrlValidator;
     private final RepositoryCloneService repositoryCloneService;
     private final AnalysisClientService analysisClientService;
+    private final AnalyticsClientService analyticsClientService;
     private final ObjectMapper objectMapper;
     private final IngestionJobExecutor ingestionJobExecutor;
 
@@ -71,6 +73,7 @@ public class IngestionOrchestratorService {
             GithubUrlValidator githubUrlValidator,
             RepositoryCloneService repositoryCloneService,
             AnalysisClientService analysisClientService,
+            AnalyticsClientService analyticsClientService,
             ObjectMapper objectMapper,
             IngestionJobExecutor ingestionJobExecutor
     ) {
@@ -85,6 +88,7 @@ public class IngestionOrchestratorService {
         this.githubUrlValidator = githubUrlValidator;
         this.repositoryCloneService = repositoryCloneService;
         this.analysisClientService = analysisClientService;
+        this.analyticsClientService = analyticsClientService;
         this.objectMapper = objectMapper;
         this.ingestionJobExecutor = ingestionJobExecutor;
     }
@@ -179,6 +183,15 @@ public class IngestionOrchestratorService {
             throw new IllegalStateException("Repository graph not found");
         }
         return graph;
+    }
+
+    public JsonNode getRepositoryAnalytics(String repositoryId, String nodeId, Integer maxDepth) {
+        JsonNode graph = getRepositoryGraph(repositoryId);
+        try {
+            return analyticsClientService.analyzeGraph(new GraphAnalyticsRequest(graph, nodeId, maxDepth));
+        } catch (IllegalArgumentException exception) {
+            throw new NotFoundException("Graph node not found: " + nodeId);
+        }
     }
 
     @Transactional

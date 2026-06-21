@@ -65,6 +65,9 @@ class IngestionOrchestratorServiceTest {
     private AnalysisClientService analysisClientService;
 
     @Mock
+    private AnalyticsClientService analyticsClientService;
+
+    @Mock
     private IngestionJobExecutor ingestionJobExecutor;
 
     @Mock
