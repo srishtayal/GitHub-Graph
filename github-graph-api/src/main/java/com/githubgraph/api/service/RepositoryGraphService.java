@@ -1,5 +1,8 @@
 package com.githubgraph.api.service;
 
+import com.githubgraph.api.analytics.model.GraphEdgeView;
+import com.githubgraph.api.analytics.model.GraphNodeView;
+import com.githubgraph.api.analytics.model.GraphView;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.githubgraph.api.dto.AnalysisServiceResponse;
@@ -85,6 +88,10 @@ public class RepositoryGraphService {
     }
 
     public JsonNode loadRepositoryGraph(UUID repositoryId, RepositorySnapshotEntity snapshot) {
+        return objectMapper.valueToTree(loadGraphView(repositoryId, snapshot).toPayload());
+    }
+
+    public GraphView loadGraphView(UUID repositoryId, RepositorySnapshotEntity snapshot) {
         Map<String, Object> result = neo4jClient.query("""
                 CALL {
                     MATCH (n:CodeGraphNode {repositoryId: $repositoryId, snapshotId: $snapshotId})
@@ -127,10 +134,25 @@ public class RepositoryGraphService {
                 .map(this::sanitizeEdge)
                 .toList();
 
-        return objectMapper.valueToTree(Map.of(
-                "nodes", nodes,
-                "edges", edges
-        ));
+        List<GraphNodeView> graphNodes = nodes.stream()
+                .map(node -> new GraphNodeView(
+                        String.valueOf(node.get("id")),
+                        String.valueOf(node.get("type")),
+                        String.valueOf(node.get("label")),
+                        castMap(node.get("properties"))
+                ))
+                .toList();
+        List<GraphEdgeView> graphEdges = edges.stream()
+                .map(edge -> new GraphEdgeView(
+                        String.valueOf(edge.get("id")),
+                        String.valueOf(edge.get("source")),
+                        String.valueOf(edge.get("target")),
+                        String.valueOf(edge.get("type")),
+                        castMap(edge.get("properties"))
+                ))
+                .toList();
+
+        return new GraphView(graphNodes, graphEdges);
     }
 
     private Map<String, Object> sanitizeNode(Map<String, Object> rawNode) {
