@@ -17,8 +17,17 @@ This workspace now contains:
 - approved Phase 1 architecture documentation
 - repo scaffolding for frontend, backend, analysis engine, and infra
 - starter API and analysis service contracts
+- Phase 2 ingestion pipeline implementation
+- Phase 3 Python static code extraction
+- Phase 4 Neo4j-backed repository graph storage and retrieval
 - initial PostgreSQL migration
 - Docker Compose setup for local development
+
+## Phase documents
+
+- [PHASE_1_SOLUTIONING.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_1_SOLUTIONING.md)
+- [PHASE_2.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_2.md)
+- [PHASE_4.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_4.md)
 - Phase 4 code graph implementation and documentation
 
 ## Next build steps

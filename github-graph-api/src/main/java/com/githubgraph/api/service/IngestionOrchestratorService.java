@@ -56,6 +56,7 @@ public class IngestionOrchestratorService {
     private final GithubUrlValidator githubUrlValidator;
     private final RepositoryCloneService repositoryCloneService;
     private final AnalysisClientService analysisClientService;
+    private final RepositoryGraphService repositoryGraphService;
     private final ObjectMapper objectMapper;
     private final IngestionJobExecutor ingestionJobExecutor;
 
@@ -71,6 +72,7 @@ public class IngestionOrchestratorService {
             GithubUrlValidator githubUrlValidator,
             RepositoryCloneService repositoryCloneService,
             AnalysisClientService analysisClientService,
+            RepositoryGraphService repositoryGraphService,
             ObjectMapper objectMapper,
             IngestionJobExecutor ingestionJobExecutor
     ) {
@@ -85,6 +87,7 @@ public class IngestionOrchestratorService {
         this.githubUrlValidator = githubUrlValidator;
         this.repositoryCloneService = repositoryCloneService;
         this.analysisClientService = analysisClientService;
+        this.repositoryGraphService = repositoryGraphService;
         this.objectMapper = objectMapper;
         this.ingestionJobExecutor = ingestionJobExecutor;
     }
@@ -173,12 +176,8 @@ public class IngestionOrchestratorService {
     }
 
     public JsonNode getRepositoryGraph(String repositoryId) {
-        JsonNode analysisPayload = loadLatestAnalysisPayload(repositoryId);
-        JsonNode graph = analysisPayload.get("graph");
-        if (graph == null || graph.isNull()) {
-            throw new IllegalStateException("Repository graph not found");
-        }
-        return graph;
+        RepositorySnapshotEntity snapshot = latestSnapshotFor(repositoryId);
+        return repositoryGraphService.loadRepositoryGraph(UUID.fromString(repositoryId), snapshot);
     }
 
     @Transactional
@@ -305,6 +304,8 @@ public class IngestionOrchestratorService {
         resultEntity.setResultVersion("phase-4");
         resultEntity.setPayloadJson(writeJson(analysis));
         analysisResultJpaRepository.save(resultEntity);
+
+        repositoryGraphService.replaceSnapshotGraph(repository.getId(), snapshot, analysis.graph());
     }
 
     private RepositoryEntity createRepository(GithubRepoRef repoRef) {
