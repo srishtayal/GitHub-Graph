@@ -13,6 +13,12 @@ from app.analytics.models import (
     TopologicalSortResult,
     TraversalResult,
 )
+from app.analytics.graph_projection import (
+    GraphFilter,
+    GraphProjection,
+    ProjectedEdge,
+    ProjectedNode,
+)
 
 __all__ = [
     "AnalyticsNode",
@@ -23,7 +29,11 @@ __all__ = [
     "Cycle",
     "CycleDetectionResult",
     "DependencyTraceResult",
+    "GraphFilter",
+    "GraphProjection",
     "ImpactAnalysisResult",
+    "ProjectedEdge",
+    "ProjectedNode",
     "TopologicalSortResult",
     "TraversalResult",
 ]
