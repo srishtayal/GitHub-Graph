@@ -19,9 +19,11 @@ from app.analytics.graph_projection import (
     ProjectedEdge,
     ProjectedNode,
 )
+from app.analytics.traversal import analyze_impact, trace_dependencies
 
 __all__ = [
     "AnalyticsNode",
+    "analyze_impact",
     "CentralityNodeScore",
     "CentralityResult",
     "Component",
@@ -35,5 +37,6 @@ __all__ = [
     "ProjectedEdge",
     "ProjectedNode",
     "TopologicalSortResult",
+    "trace_dependencies",
     "TraversalResult",
 ]
