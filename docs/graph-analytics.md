@@ -1,126 +1,15 @@
 # Graph Analytics
 
-This document explains the Phase 5 graph analytics layer in GitHub Graph.
+This guide describes the approved design for Phase 5. The analytics layer is implemented in the Python analysis engine and operates on an in-memory Phase 4 `GraphPayload`; it does not query Neo4j or add frontend behavior.
 
-## Scope
+See [Phase 5](../PHASE_5.md) for the full scope, graph contract, API plan, and test strategy.
 
-Phase 5 turns the stored dependency graph into a reusable analysis engine. It does not include AI, bug localization, or frontend visualization.
+## Directional meaning
 
-## Algorithms
+Dependency edges point from a dependent node to the node it needs. DFS follows outgoing edges to trace dependencies. BFS follows incoming edges to identify nodes impacted by a failed dependency.
 
-### Breadth First Search (BFS)
+Containment (`BELONGS_TO`) is excluded by default. Internal file/module ordering uses `IMPORTS` and resolved internal `USES` edges; function calls are optional for cycle analysis but excluded from default topological sorting.
 
-Purpose:
+## Complexity
 
-- impact analysis
-- downstream affected-node discovery
-
-Behavior:
-
-- starts from a node
-- traverses incoming dependency edges
-- returns all nodes affected by the selected node failing
-
-Complexity:
-
-- `O(V + E)`
-
-### Depth First Search (DFS)
-
-Purpose:
-
-- dependency tracing
-- deep execution-chain exploration
-
-Behavior:
-
-- starts from a node
-- traverses outgoing dependency edges
-- returns a DFS traversal order with parent/depth information
-
-Complexity:
-
-- `O(V + E)`
-
-### Connected Components
-
-Purpose:
-
-- identify isolated subgraphs
-- find naturally grouped code regions
-
-Behavior:
-
-- uses the structural graph excluding the repository root node
-- treats edges as undirected for grouping
-
-Complexity:
-
-- `O(V + E)`
-
-### Cycle Detection
-
-Purpose:
-
-- detect circular imports
-- find recursive dependency loops
-- return cycle paths
-
-Behavior:
-
-- runs DFS on the dependency graph
-- tracks active recursion stack
-- deduplicates discovered cycles
-
-Complexity:
-
-- `O(V + E)`
-
-### Topological Sort
-
-Purpose:
-
-- build ordering
-- architecture understanding
-- dependency ordering
-
-Behavior:
-
-- runs on the dependency graph
-- returns a valid order when acyclic
-- returns a structured failure message and cycle hints when cyclic
-
-Complexity:
-
-- `O(V + E)`
-
-### Centrality Analysis
-
-Purpose:
-
-- identify critical functions
-- find bottleneck modules
-- rank heavily reused utilities
-
-Metrics:
-
-- in-degree
-- out-degree
-- total degree
-- normalized degree centrality
-
-Complexity:
-
-- `O(V + E)`
-
-## Inputs
-
-Each algorithm operates on an in-memory graph projection built from Neo4j:
-
-- nodes by id
-- outgoing adjacency
-- incoming adjacency
-
-## Outputs
-
-The analytics endpoints return structured JSON suitable for later phases such as AI explanations and UI visualization.
+DFS, BFS, connected components, topological sort, degree centrality, and directed cycle detection are each `O(V + E)` for a selected graph projection.

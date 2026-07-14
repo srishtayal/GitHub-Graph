@@ -23,4 +23,4 @@ Run the extractor tests with:
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
 
-See [Phase 3](../PHASE_3.md) for the JSON contract.
+See [Phase 3](../PHASE_3.md) for the JSON contract, [Phase 4](../PHASE_4.md) for graph construction, and [Phase 5](../PHASE_5.md) for the approved Python analytics design.

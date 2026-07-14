@@ -9,35 +9,29 @@ The system currently has:
 3. graph construction
 4. graph persistence in Neo4j
 
-Phase 5 sits on top of the persisted Neo4j graph and provides reusable graph algorithms through the backend.
+Phase 5 consumes the normalized Phase 4 graph payload in the Python analysis engine and provides reusable in-memory graph algorithms. It does not add backend orchestration or persistence behavior in this phase.
 
 ## Layering
 
-### Neo4j persistence
+### Graph input
 
-- `RepositoryGraphService`
-- source of truth for repository graph nodes and edges
+- the existing Phase 4 `GraphPayload`
+- stable node IDs, nodes, and directed edges
 
-### Graph loading
+### Graph projection
 
-- `GraphLoaderService`
-- loads the latest repository snapshot graph
-- converts raw persisted graph data into a reusable `GraphView`
+- Python adjacency indexes for outgoing and incoming edges
+- filtered, deterministic views for individual algorithms
 
 ### Analytics algorithms
 
-- focused classes for BFS, DFS, components, cycles, topological sort, and centrality
-- no REST or persistence logic inside algorithm classes
+- focused Python modules for BFS, DFS, components, cycles, topological sort, and centrality
+- no REST, Neo4j, or persistence logic inside algorithm modules
 
 ### Analytics orchestration
 
-- `GraphAnalyticsService`
-- validates input and delegates to algorithms
-
-### API layer
-
-- `AnalyticsController`
-- exposes REST endpoints for each analysis capability
+- Python service façade validates stable node IDs and delegates to algorithms
+- returns structured result models for later integration
 
 ## Design goals
 
