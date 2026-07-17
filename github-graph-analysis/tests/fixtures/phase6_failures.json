@@ -1,0 +1,25 @@
+[
+  {
+    "failureId": "incident-auth-token",
+    "repositoryId": "repo-example",
+    "occurredAt": "2026-07-17T10:30:00Z",
+    "failurePathNodeIds": ["function:authenticate", "module:jwt"],
+    "errorSignature": {
+      "exceptionType": "ValueError",
+      "messageFingerprint": "invalid-token"
+    },
+    "confirmedRootCauseNodeIds": ["function:authenticate"],
+    "metadata": {"source": "fixture"}
+  },
+  {
+    "failureId": "incident-other-repository",
+    "repositoryId": "repo-other",
+    "occurredAt": "2026-07-17T11:00:00Z",
+    "failurePathNodeIds": ["function:other"],
+    "errorSignature": {
+      "exceptionType": "KeyError"
+    },
+    "confirmedRootCauseNodeIds": [],
+    "metadata": {}
+  }
+]
