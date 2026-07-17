@@ -21,6 +21,7 @@ This workspace now contains:
 - Phase 3 Python static code extraction
 - Phase 4 Neo4j-backed repository graph storage and retrieval
 - approved Phase 5 Python graph analytics design
+- Phase 6 similarity and bug-localization engine
 - initial PostgreSQL migration
 - Docker Compose setup for local development
 
@@ -30,7 +31,8 @@ This workspace now contains:
 - [PHASE_2.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_2.md)
 - [PHASE_4.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_4.md)
 - [PHASE_5.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_5.md)
-- Phase 4 code graph implementation and documentation
+- [PHASE_6_SOLUTIONING.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_6_SOLUTIONING.md)
+- [PHASE_6.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_6.md)
 
 ## Next build steps
 

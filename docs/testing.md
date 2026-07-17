@@ -31,6 +31,21 @@ pip install -e .
 PYTHONPATH=. python -m unittest discover -s tests
 ```
 
+## Phase 6 focused tests
+
+Run from `github-graph-analysis/` after installing the Python dependencies:
+
+```bash
+PYTHONPATH=. python -m unittest \
+  tests.test_phase6_schemas \
+  tests.test_failure_history_store \
+  tests.test_graph_feature_extractor \
+  tests.test_similarity_engine \
+  tests.test_similarity_clustering \
+  tests.test_failure_path_parser \
+  tests.test_bug_localizer -v
+```
+
 ## Docker testing
 
 From:
