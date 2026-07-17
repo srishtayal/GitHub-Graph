@@ -30,6 +30,7 @@ class UnresolvedReference(BaseModel):
 
 class ResolvedFailurePath(BaseModel):
     nodeIds: list[str] = Field(default_factory=list)
+    stackFrameNodeIds: list[str] = Field(default_factory=list)
     errorSignature: ErrorSignature = Field(default_factory=ErrorSignature)
     unresolvedReferences: list[UnresolvedReference] = Field(default_factory=list)
 
@@ -70,6 +71,7 @@ class LocalizationConfiguration(BaseModel):
     historyEvidenceWeight: float = Field(default=0.20, ge=0.0)
     structuralEvidenceWeight: float = Field(default=0.10, ge=0.0)
     criticalityEvidenceWeight: float = Field(default=0.05, ge=0.0)
+    maxSuspectedRootCauses: int = Field(default=10, ge=1)
 
     @model_validator(mode="after")
     def validate_weights(self) -> "LocalizationConfiguration":
@@ -87,6 +89,7 @@ class LocalizationConfiguration(BaseModel):
 
 class BugLocalizationResult(BaseModel):
     resolvedFailurePath: ResolvedFailurePath
+    impactedNodeIds: list[str] = Field(default_factory=list)
     similarPastFailures: list[SimilarPastFailure] = Field(default_factory=list)
     suspectedRootCauses: list[RootCauseCandidate] = Field(default_factory=list)
     reasoningMetadata: dict[str, object] = Field(default_factory=dict)

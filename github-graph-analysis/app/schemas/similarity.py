@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
-SimilarityNodeType = Literal["function", "file", "module"]
+SimilarityNodeType = Literal["function", "file", "module", "failurePath"]
 FeatureValues = dict[str, set[str]]
 
 

@@ -35,6 +35,24 @@ def similarity_graph() -> GraphPayload:
     )
 
 
+def failure_graph() -> GraphPayload:
+    return GraphPayload(
+        nodes=[
+            GraphNode(
+                id="function:login", type="function", label="login",
+                properties={"relativePath": "app/auth.py", "name": "login", "qualifiedName": "login", "startLine": 20, "endLine": 30},
+            ),
+            GraphNode(id="file:auth", type="file", label="auth.py", properties={"relativePath": "app/auth.py"}),
+            GraphNode(id="module:jwt", type="module", label="jwt"),
+        ],
+        edges=[
+            GraphEdge(id="failure:01", source="function:login", target="file:auth", type="BELONGS_TO"),
+            GraphEdge(id="failure:02", source="file:auth", target="module:jwt", type="IMPORTS"),
+            GraphEdge(id="failure:03", source="function:login", target="module:jwt", type="CALLS"),
+        ],
+    )
+
+
 def _node(node_id: str, node_type: str, label: str) -> GraphNode:
     return GraphNode(id=node_id, type=node_type, label=label)
 
