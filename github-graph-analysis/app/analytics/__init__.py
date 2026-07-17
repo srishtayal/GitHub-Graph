@@ -20,6 +20,9 @@ from app.analytics.graph_projection import (
     ProjectedNode,
 )
 from app.analytics.traversal import analyze_impact, trace_dependencies
+from app.analytics.components import find_connected_components
+from app.analytics.cycles import detect_cycles
+from app.analytics.topology import topological_sort
 
 __all__ = [
     "AnalyticsNode",
@@ -31,12 +34,15 @@ __all__ = [
     "Cycle",
     "CycleDetectionResult",
     "DependencyTraceResult",
+    "detect_cycles",
+    "find_connected_components",
     "GraphFilter",
     "GraphProjection",
     "ImpactAnalysisResult",
     "ProjectedEdge",
     "ProjectedNode",
     "TopologicalSortResult",
+    "topological_sort",
     "trace_dependencies",
     "TraversalResult",
 ]
