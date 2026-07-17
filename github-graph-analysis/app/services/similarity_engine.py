@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from app.schemas.responses import GraphPayload
 from app.schemas.similarity import (
     DEFAULT_SIMILARITY_PROFILES,
@@ -59,6 +61,7 @@ class SimilarityEngine:
         target_node_id: str,
         limit: int = 10,
         profile: FeatureProfile | None = None,
+        cluster_ids: Mapping[str, str] | None = None,
     ) -> SimilarityRanking:
         if limit < 0:
             raise ValueError("limit must be zero or greater")
@@ -70,6 +73,9 @@ class SimilarityEngine:
             for node_id, node in index.projection.nodes_by_id.items()
             if node.type == target.nodeType and node_id != target_node_id
         ]
+        if cluster_ids is not None:
+            for result in results:
+                result.clusterId = cluster_ids.get(result.candidateNodeId)
         results.sort(key=lambda result: (-result.score, result.candidateNodeId))
         return SimilarityRanking(
             targetNodeId=target.nodeId,
