@@ -23,6 +23,7 @@ from app.analytics.traversal import analyze_impact, trace_dependencies
 from app.analytics.components import find_connected_components
 from app.analytics.cycles import detect_cycles
 from app.analytics.topology import topological_sort
+from app.analytics.centrality import rank_centrality
 
 __all__ = [
     "AnalyticsNode",
@@ -41,6 +42,7 @@ __all__ = [
     "ImpactAnalysisResult",
     "ProjectedEdge",
     "ProjectedNode",
+    "rank_centrality",
     "TopologicalSortResult",
     "topological_sort",
     "trace_dependencies",
