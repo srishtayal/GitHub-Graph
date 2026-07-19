@@ -14,13 +14,18 @@ The layer consumes, but does not recompute or mutate:
 - Phase 6 similarity rankings/clusters and bug-localization results;
 - optional existing symbol metadata and supplied snippets.
 
-It does not scan raw repositories, add a FastAPI endpoint, alter graph schemas,
-or enable Gemini tools that could provide outside information.
+It does not scan raw repositories, alter graph schemas, or enable Gemini tools
+that could provide outside information. It is exposed through the analysis
+service's internal FastAPI endpoint.
 
 ## Main service
 
 `app.services.explanations.ExplanationService` accepts an
 `ExplanationRequest` and returns an `ExplanationResponse`.
+
+The analysis service exposes the same contract at
+`POST /internal/v1/explanations`. The endpoint maps absent Gemini configuration
+to HTTP 503 and Gemini/provider or invalid-response failures to HTTP 502.
 
 1. `QueryRouter` deterministically selects an intent.
 2. `EvidenceSelector` selects only the matching precomputed result and graph

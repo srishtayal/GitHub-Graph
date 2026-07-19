@@ -23,6 +23,9 @@ services:
   analysis:
     build:
       context: ../github-graph-analysis
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
     ports:
       - "${ANALYSIS_PORT}:8000"
     volumes:

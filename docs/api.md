@@ -66,3 +66,23 @@ Returns:
 - out-degree
 - total degree
 - degree centrality
+
+## Grounded AI explanations
+
+Base path: `http://localhost:8000/internal/v1`
+
+`POST /explanations`
+
+Accepts the Phase 7 `ExplanationRequest`: a user `query`, a `repositoryId`, the
+existing `GraphPayload`, and the relevant precomputed Phase 5 or Phase 6 result
+(`dependencyTrace`, `impactAnalysis`, `centrality`, `similarityRanking`,
+`similarityClusters`, `bugLocalization`, `cycleDetection`, or
+`topologicalSort`).
+
+The response contains the answer, cited evidence IDs, referenced graph node and
+edge IDs, confidence, limitations, and follow-up suggestions. It does not
+perform raw repository scanning.
+
+`GEMINI_API_KEY` must be configured for evidence that requires Gemini. Requests
+with missing required analytics return an `insufficient` response locally;
+missing Gemini configuration returns HTTP 503.

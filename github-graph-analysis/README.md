@@ -44,10 +44,9 @@ See [Phase 6](../PHASE_6.md) for the implementation details and [Phase 6 solutio
 
 ## Phase 7: AI Explanation Layer
 
-Phase 7 is a reusable Python service, not an HTTP endpoint. It accepts an
-`ExplanationRequest` with a user question, `GraphPayload`, and whichever
-precomputed Phase 5/6 result applies. It never scans a repository or asks Gemini
-to infer facts beyond the supplied evidence.
+Phase 7 accepts an `ExplanationRequest` with a user question, `GraphPayload`,
+and whichever precomputed Phase 5/6 result applies. It never scans a repository
+or asks Gemini to infer facts beyond the supplied evidence.
 
 Configure Gemini outside source control:
 
@@ -71,3 +70,17 @@ PYTHONPATH=. python -m unittest \
 ```
 
 See [Phase 7](../PHASE_7.md) for the evidence contract and grounded-response behavior.
+
+### Postman endpoint
+
+When the analysis service is running, submit precomputed graph evidence to:
+
+```text
+POST http://localhost:8000/internal/v1/explanations
+Content-Type: application/json
+```
+
+The response is an `ExplanationResponse`. A question whose required analysis
+result is missing returns an `insufficient` response without contacting Gemini.
+Missing Gemini configuration returns HTTP 503; provider or invalid-model
+responses return HTTP 502.
