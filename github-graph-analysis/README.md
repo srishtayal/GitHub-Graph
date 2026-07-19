@@ -10,6 +10,7 @@ FastAPI analysis service for GitHub Graph.
 - Parse Python classes, functions, imports, calls, inheritance, API routes, and module dependencies
 - Return normalized analysis payloads
 - Analyze graph similarity, clusters, and failure-localization evidence
+- Produce grounded Gemini explanations from precomputed graph-analysis evidence
 
 ## Local development
 
@@ -40,3 +41,33 @@ PYTHONPATH=. python -m unittest \
 ```
 
 See [Phase 6](../PHASE_6.md) for the implementation details and [Phase 6 solutioning](../PHASE_6_SOLUTIONING.md) for the design record.
+
+## Phase 7: AI Explanation Layer
+
+Phase 7 is a reusable Python service, not an HTTP endpoint. It accepts an
+`ExplanationRequest` with a user question, `GraphPayload`, and whichever
+precomputed Phase 5/6 result applies. It never scans a repository or asks Gemini
+to infer facts beyond the supplied evidence.
+
+Configure Gemini outside source control:
+
+```bash
+export GEMINI_API_KEY="..."
+# Optional; the default is the lightest Flash model.
+export GEMINI_MODEL="gemini-3.1-flash-lite"
+```
+
+Run the focused tests:
+
+```bash
+PYTHONPATH=. python -m unittest \
+  tests.test_phase7_schemas \
+  tests.test_query_router \
+  tests.test_evidence_selector \
+  tests.test_prompt_builder \
+  tests.test_response_parser \
+  tests.test_gemini_client \
+  tests.test_explanation_service -v
+```
+
+See [Phase 7](../PHASE_7.md) for the evidence contract and grounded-response behavior.

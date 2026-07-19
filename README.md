@@ -22,6 +22,7 @@ This workspace now contains:
 - Phase 4 Neo4j-backed repository graph storage and retrieval
 - approved Phase 5 Python graph analytics design
 - Phase 6 similarity and bug-localization engine
+- Phase 7 grounded Gemini explanation layer
 - initial PostgreSQL migration
 - Docker Compose setup for local development
 
@@ -33,6 +34,7 @@ This workspace now contains:
 - [PHASE_5.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_5.md)
 - [PHASE_6_SOLUTIONING.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_6_SOLUTIONING.md)
 - [PHASE_6.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_6.md)
+- [PHASE_7.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_7.md)
 
 ## Next build steps
 

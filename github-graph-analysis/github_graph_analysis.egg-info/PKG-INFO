@@ -5,6 +5,7 @@ Summary: Analysis engine for GitHub Graph
 Requires-Python: >=3.11
 Requires-Dist: fastapi==0.115.5
 Requires-Dist: uvicorn[standard]==0.32.0
-Requires-Dist: pydantic==2.10.2
+Requires-Dist: pydantic==2.12.5
+Requires-Dist: google-genai==2.12.1
 Provides-Extra: test
 Requires-Dist: httpx==0.28.1; extra == "test"
