@@ -82,6 +82,32 @@ PYTHONPATH=. python -m unittest \
 
 See [Phase 7](../PHASE_7.md) for the evidence contract and grounded-response behavior.
 
+### Grounded query orchestration
+
+`POST /internal/v1/explanations/query` receives the repository graph and history
+loaded by Spring Boot plus a user's question. `GroundedQueryService` routes the
+intent, resolves a named target when needed, runs the matching Phase 5 or Phase 6
+analysis, bounds the selected evidence, and calls the existing
+`ExplanationService`.
+
+Public callers use `POST /api/v1/explanations/query` and do not construct graph or
+analytics payloads:
+
+```json
+{
+  "repositoryId": "<repository UUID>",
+  "query": "What breaks if dbConnection fails?"
+}
+```
+
+Optional fields are `targetNodeId`, `stackTrace`, and `errorLog`. Responses include
+snapshot metadata plus model, prompt, and orchestration versions. The `GEMINI_*`
+and `EXPLANATION_*` variables in `infra/.env.example` configure provider timeouts,
+bounded retries, and evidence/prompt limits. All user and repository content is
+treated as untrusted data. Unsupported citations fail closed with HTTP 502,
+missing configuration returns HTTP 503, and missing evidence returns
+`confidence: "insufficient"` without calling Gemini.
+
 ### Postman endpoint
 
 When the analysis service is running, submit precomputed graph evidence to:

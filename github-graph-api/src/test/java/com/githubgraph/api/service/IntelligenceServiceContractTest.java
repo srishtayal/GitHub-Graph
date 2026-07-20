@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-class IntelligenceServiceIntegrationTest {
+class IntelligenceServiceContractTest {
 
     private HttpServer server;
 
@@ -33,7 +33,7 @@ class IntelligenceServiceIntegrationTest {
     }
 
     @Test
-    void convertsNeo4jGraphViewIntoPhaseSixSimilarityResponse() throws Exception {
+    void serializesGraphPayloadAndReturnsPhaseSixSimilarityContract() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
         AtomicReference<JsonNode> receivedRequest = new AtomicReference<>();
         server = HttpServer.create(new InetSocketAddress(0), 0);

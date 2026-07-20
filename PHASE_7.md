@@ -1,12 +1,12 @@
 # GitHub Graph - Phase 7
 
-Phase 7 adds a Python-only AI Explanation Layer. It turns existing structured
+Phase 7 adds an orchestrated AI Explanation Layer. It turns existing structured
 repository intelligence into concise natural-language answers while keeping all
 claims bounded by supplied graph evidence.
 
 ## Scope
 
-The layer consumes, but does not recompute or mutate:
+The explanation layer consumes:
 
 - Phase 3/4 `GraphPayload` and repository metadata;
 - Phase 5 DFS dependency traces, BFS impact analyses, centrality, cycles, and
@@ -14,28 +14,47 @@ The layer consumes, but does not recompute or mutate:
 - Phase 6 similarity rankings/clusters and bug-localization results;
 - optional existing symbol metadata and supplied snippets.
 
-It does not scan raw repositories, alter graph schemas, or enable Gemini tools
-that could provide outside information. It is exposed through the analysis
-service's internal FastAPI endpoint.
+`GroundedQueryService` computes the required Phase 5/6 result from the loaded
+graph. It does not scan raw repositories, alter graph schemas, or enable Gemini
+tools that could provide outside information.
 
 ## Main service
 
-`app.services.explanations.ExplanationService` accepts an
-`ExplanationRequest` and returns an `ExplanationResponse`.
+`app.services.explanations.GroundedQueryService` is the public orchestration
+entrypoint. Spring Boot loads the latest snapshot graph from Neo4j and
+snapshot-scoped failure history from PostgreSQL, then calls
+`POST /internal/v1/explanations/query`.
 
-The analysis service exposes the same contract at
-`POST /internal/v1/explanations`. The endpoint maps absent Gemini configuration
-to HTTP 503 and Gemini/provider or invalid-response failures to HTTP 502.
+Public clients call:
+
+```http
+POST /api/v1/explanations/query
+Content-Type: application/json
+
+{
+  "repositoryId": "<repository UUID>",
+  "query": "What breaks if dbConnection fails?"
+}
+```
+
+`targetNodeId`, `stackTrace`, and `errorLog` are optional. The original
+`POST /internal/v1/explanations` endpoint remains available for trusted internal
+callers that already have an `ExplanationRequest`.
 
 1. `QueryRouter` deterministically selects an intent.
-2. `EvidenceSelector` selects only the matching precomputed result and graph
+2. `TargetResolver` validates an explicit node or resolves a named graph node
+   from the question.
+3. `GroundedQueryService` runs the required DFS, BFS, centrality, similarity,
+   localization, cycle, or topological analysis.
+4. `EvidenceSelector` selects and bounds only the matching result and graph
    entities, assigning every prompt item a stable evidence ID.
-3. `PromptBuilder` prohibits outside knowledge and gives Gemini the allowed
+5. `PromptBuilder` marks all user/repository text as untrusted, prohibits outside
+   knowledge, and gives Gemini the allowed
    evidence, nodes, and edges.
-4. `GeminiClient` requests JSON structured output using the official
-   `google-genai` Python SDK.
-5. `ResponseParser` validates the Pydantic response and removes unrecognized
-   graph references. A response citing no supplied evidence is rejected.
+6. `GeminiClient` requests JSON structured output using the official
+   `google-genai` Python SDK with a timeout and bounded retries.
+7. `ResponseParser` rejects unsupported evidence IDs, mismatched evidence source
+   types, and unsupported node or edge references.
 
 If an intent is unknown or its required output is absent, the service returns a
 local `insufficient` response and does not call Gemini.
@@ -54,11 +73,11 @@ local `insufficient` response and does not call Gemini.
 
 ## Grounding and confidence
 
-Gemini is told to cite each substantive claim with a supplied evidence ID. It is
+Gemini is required to cite each substantive claim with a supplied evidence ID. It is
 also told not to present a localization candidate as a certain root cause.
 Response validation permits only node and edge IDs supplied in the selected
-graph slice. Missing evidence, missing citations, or unsupported references
-produce an `insufficient` outcome rather than an ungrounded answer.
+graph slice. Missing graph evidence returns a local `insufficient` response.
+Missing model citations or unsupported references fail closed with HTTP 502.
 
 ## Configuration
 
@@ -69,10 +88,24 @@ export GEMINI_API_KEY="..."
 ```
 
 The default model is `gemini-3.1-flash-lite`; override it only through
-`GEMINI_MODEL`. Keys and complete prompts are never logged by this layer.
+`GEMINI_MODEL`. Provider and evidence controls are configured through:
+
+- `GEMINI_TIMEOUT_SECONDS`
+- `GEMINI_MAX_RETRIES`
+- `GEMINI_RETRY_BACKOFF_SECONDS`
+- `EXPLANATION_MAX_PROMPT_CHARS`
+- `EXPLANATION_MAX_EVIDENCE_CHARS`
+- `EXPLANATION_MAX_EVIDENCE_ITEMS`
+- `EXPLANATION_MAX_REFERENCED_NODES`
+- `EXPLANATION_MAX_REFERENCED_EDGES`
+
+Keys and complete prompts are never logged. Responses record provider/model,
+prompt version, orchestration version, repository ID, snapshot ID, branch, and
+commit SHA.
 
 ## Tests
 
-Phase 7 tests use an injected fake transport. No live Gemini credentials or
-network calls are required to test routing, prompt construction, parsing, and
-service behavior.
+Unit tests use an injected fake transport. Adversarial fixtures cover prompt
+injection, invented evidence, unsupported graph references, retries, and
+insufficient evidence. A live provider smoke test should use a fully synthetic
+graph so repository data is not exported merely to test provider connectivity.

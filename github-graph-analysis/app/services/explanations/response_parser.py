@@ -12,20 +12,27 @@ class ResponseParser:
         except Exception as error:
             raise ExplanationResponseError("Gemini returned an invalid explanation response") from error
 
-        valid_evidence_ids = {item.evidence_id for item in selection.items}
-        valid_evidence = [reference for reference in response.supportingEvidence if reference.evidenceId in valid_evidence_ids]
-        valid_nodes = [node_id for node_id in response.referencedNodeIds if node_id in selection.allowed_node_ids]
-        valid_edges = [edge_id for edge_id in response.referencedEdgeIds if edge_id in selection.allowed_edge_ids]
+        valid_evidence = {item.evidence_id: item.source_type for item in selection.items}
+        invalid_evidence = [
+            reference.evidenceId
+            for reference in response.supportingEvidence
+            if (
+                reference.evidenceId not in valid_evidence
+                or reference.sourceType != valid_evidence[reference.evidenceId]
+            )
+        ]
+        invalid_nodes = [
+            node_id for node_id in response.referencedNodeIds if node_id not in selection.allowed_node_ids
+        ]
+        invalid_edges = [
+            edge_id for edge_id in response.referencedEdgeIds if edge_id not in selection.allowed_edge_ids
+        ]
+        if invalid_evidence or invalid_nodes or invalid_edges:
+            raise ExplanationResponseError("Gemini cited evidence or graph references that were not supplied")
 
-        if response.supportingEvidence and not valid_evidence:
+        if not response.supportingEvidence:
             raise ExplanationResponseError("Gemini cited no evidence that was supplied to it")
 
-        response.supportingEvidence = valid_evidence
-        response.referencedNodeIds = valid_nodes
-        response.referencedEdgeIds = valid_edges
-        if not valid_evidence:
-            response.confidence = "insufficient"
-            response.limitations = [*response.limitations, "The response did not cite supplied graph evidence."]
-        elif response.confidence == "high" and not selection.sufficient:
+        if response.confidence == "high" and not selection.sufficient:
             response.confidence = "low"
         return response

@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: github_graph_integration
+      POSTGRES_USER: github_graph
+      POSTGRES_PASSWORD: github_graph
+    volumes:
+      - integration-postgres-data:/var/lib/postgresql/data
+      - ./integration/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U github_graph -d github_graph_integration"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/integrationpass
+    volumes:
+      - integration-neo4j-data:/data
+      - ./integration/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://localhost:7474 || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 45
+      start_period: 5s
+
+  analysis:
+    build:
+      context: ../github-graph-analysis
+    environment:
+      GEMINI_API_KEY: ""
+      GEMINI_MODEL: gemini-3.1-flash-lite
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/internal/v1/health', timeout=2)"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  api:
+    build:
+      context: ../github-graph-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      analysis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/github_graph_integration
+      SPRING_DATASOURCE_USERNAME: github_graph
+      SPRING_DATASOURCE_PASSWORD: github_graph
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: integrationpass
+      ANALYSIS_BASE_URL: http://analysis:8000
+      REPOSITORY_CLONE_ROOT: /tmp/github-graph-integration/repos
+      NEO4J_INITIALIZATION_MAX_ATTEMPTS: 20
+      NEO4J_INITIALIZATION_INITIAL_BACKOFF_MILLIS: 100
+      NEO4J_INITIALIZATION_MAX_BACKOFF_MILLIS: 1000
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 45
+      start_period: 5s
+
+  test-runner:
+    image: python:3.11-slim
+    profiles: ["test"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://api:8080
+    volumes:
+      - ./integration:/tests:ro
+    working_dir: /tests
+
+volumes:
+  integration-postgres-data:
+  integration-neo4j-data:

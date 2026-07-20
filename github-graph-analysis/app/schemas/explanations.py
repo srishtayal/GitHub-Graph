@@ -11,7 +11,7 @@ from app.analytics.models import (
     ImpactAnalysisResult,
     TopologicalSortResult,
 )
-from app.schemas.failure_analysis import BugLocalizationResult
+from app.schemas.failure_analysis import BugLocalizationResult, HistoricalFailure
 from app.schemas.responses import GraphPayload, SymbolMetadata
 from app.schemas.similarity import ClusterResult, SimilarityRanking
 
@@ -85,3 +85,36 @@ class ExplanationResponse(BaseModel):
     confidence: ConfidenceLevel
     limitations: list[str] = Field(default_factory=list)
     followUpSuggestions: list[str] = Field(default_factory=list)
+
+
+class SnapshotMetadata(BaseModel):
+    repositoryId: str
+    snapshotId: str
+    branchName: str | None = None
+    commitSha: str | None = None
+
+
+class ModelMetadata(BaseModel):
+    provider: str = "gemini"
+    model: str
+    promptVersion: str
+    orchestrationVersion: str
+
+
+class GroundedQueryRequest(BaseModel):
+    """Repository context loaded by Spring plus the user's minimal query."""
+
+    repositoryId: str
+    query: str = Field(min_length=1, max_length=4000)
+    targetNodeId: str | None = None
+    stackTrace: str | None = Field(default=None, max_length=20000)
+    errorLog: str | None = Field(default=None, max_length=20000)
+    graph: GraphPayload
+    history: list[HistoricalFailure] = Field(default_factory=list)
+    repositoryMetadata: dict[str, Any] = Field(default_factory=dict)
+    snapshotMetadata: SnapshotMetadata
+
+
+class GroundedQueryResponse(ExplanationResponse):
+    snapshotMetadata: SnapshotMetadata
+    modelMetadata: ModelMetadata

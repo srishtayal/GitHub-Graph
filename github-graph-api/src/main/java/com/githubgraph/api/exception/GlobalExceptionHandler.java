@@ -37,6 +37,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(BadGatewayException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public Map<String, Object> handleBadGateway(BadGatewayException exception) {
+        return Map.of(
+                "timestamp", Instant.now().toString(),
+                "error", "BAD_GATEWAY",
+                "code", exception.getCode(),
+                "message", exception.getMessage()
+        );
+    }
+
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, Object> handleNotFound(NotFoundException exception) {
