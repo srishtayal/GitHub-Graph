@@ -2,8 +2,11 @@ package com.githubgraph.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,6 +14,9 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.githubgraph.api.dto.AnalysisServiceResponse;
+import com.githubgraph.api.dto.CreateIngestionRequest;
+import com.githubgraph.api.dto.CreateIngestionResponse;
+import com.githubgraph.api.exception.ValidationException;
 import com.githubgraph.api.job.IngestionJobExecutor;
 import com.githubgraph.api.persistence.entity.AnalysisResultEntity;
 import com.githubgraph.api.persistence.entity.IngestionJobEntity;
@@ -24,6 +30,7 @@ import com.githubgraph.api.persistence.repository.ImportRelationJpaRepository;
 import com.githubgraph.api.persistence.repository.IngestionJobJpaRepository;
 import com.githubgraph.api.persistence.repository.RepositoryJpaRepository;
 import com.githubgraph.api.persistence.repository.RepositorySnapshotJpaRepository;
+import com.githubgraph.api.util.GithubRepoRef;
 import com.githubgraph.api.util.GithubUrlValidator;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +39,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @ExtendWith(MockitoExtension.class)
 class IngestionOrchestratorServiceTest {
@@ -64,6 +73,9 @@ class IngestionOrchestratorServiceTest {
     private GithubUrlValidator githubUrlValidator;
 
     @Mock
+    private GithubRepositoryValidationService githubRepositoryValidationService;
+
+    @Mock
     private RepositoryCloneService repositoryCloneService;
 
     @Mock
@@ -80,6 +92,68 @@ class IngestionOrchestratorServiceTest {
 
     @InjectMocks
     private IngestionOrchestratorService service;
+
+    @Test
+    void createsJobOnlyAfterPublicRepositoryValidationSucceeds() {
+        GithubRepoRef repoRef = new GithubRepoRef(
+                "https://github.com/pallets/itsdangerous",
+                "pallets",
+                "itsdangerous"
+        );
+        when(githubUrlValidator.validateAndNormalize(repoRef.normalizedUrl())).thenReturn(repoRef);
+        when(repositoryJpaRepository.findByGithubUrl(repoRef.normalizedUrl())).thenReturn(Optional.empty());
+        when(repositoryJpaRepository.save(any(RepositoryEntity.class))).thenAnswer(invocation -> {
+            RepositoryEntity repository = invocation.getArgument(0);
+            repository.prePersist();
+            return repository;
+        });
+        when(ingestionJobJpaRepository.saveAndFlush(any(IngestionJobEntity.class))).thenAnswer(invocation -> {
+            IngestionJobEntity job = invocation.getArgument(0);
+            job.prePersist();
+            return job;
+        });
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            CreateIngestionResponse response = service.createIngestion(
+                    new CreateIngestionRequest(repoRef.normalizedUrl())
+            );
+
+            assertEquals("PENDING", response.status());
+            assertNotNull(response.jobId());
+            verify(githubRepositoryValidationService).verifyPublic(repoRef);
+            verify(ingestionJobExecutor, never()).processAsync(any());
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(TransactionSynchronization::afterCommit);
+            verify(ingestionJobExecutor).processAsync(UUID.fromString(response.jobId()));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void repositoryValidationFailureCreatesNoDatabaseRecords() {
+        GithubRepoRef repoRef = new GithubRepoRef(
+                "https://github.com/example/private",
+                "example",
+                "private"
+        );
+        when(githubUrlValidator.validateAndNormalize(repoRef.normalizedUrl())).thenReturn(repoRef);
+        doThrow(new ValidationException("PRIVATE_REPOSITORY", "Private repositories are not supported"))
+                .when(githubRepositoryValidationService)
+                .verifyPublic(repoRef);
+
+        assertThrows(
+                ValidationException.class,
+                () -> service.createIngestion(new CreateIngestionRequest(repoRef.normalizedUrl()))
+        );
+
+        verify(repositoryJpaRepository, never()).findByGithubUrl(any());
+        verify(repositoryJpaRepository, never()).save(any());
+        verify(ingestionJobJpaRepository, never()).saveAndFlush(any());
+        verify(ingestionJobExecutor, never()).processAsync(any());
+    }
 
     @Test
     void getRepositoryGraphReturnsPersistedGraphFromNeo4jService() throws Exception {

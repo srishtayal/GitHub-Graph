@@ -9,6 +9,7 @@ export type IngestionJob = {
   repositoryId: string | null;
   status: string;
   errorMessage: string | null;
+  errorCategory?: string | null;
   createdAt: string | null;
   startedAt: string | null;
   finishedAt: string | null;

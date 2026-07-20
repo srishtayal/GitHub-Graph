@@ -2,6 +2,17 @@
 
 Parent workspace for the GitHub Graph Phase 1 foundation.
 
+## Quick start
+
+```bash
+cd infra
+cp .env.example .env
+docker compose up --build
+```
+
+See [infra/README.md](infra/README.md) for configuration, health endpoints, and
+repository limits.
+
 ## Workspace layout
 
 - [PHASE_1_SOLUTIONING.md](/Users/srishtitayal/Projects/GitHub-Graph/PHASE_1_SOLUTIONING.md)

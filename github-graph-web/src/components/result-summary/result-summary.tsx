@@ -63,7 +63,11 @@ export function ResultSummary({ jobId }: ResultSummaryProps) {
         }
 
         if (!cancelled) {
-          setMessage(nextJob.errorMessage ?? `Job status: ${nextJob.status}`);
+          setMessage(
+            nextJob.errorMessage
+              ? `${nextJob.errorCategory ? `${nextJob.errorCategory}: ` : ""}${nextJob.errorMessage}`
+              : `Job status: ${nextJob.status}`
+          );
         }
       } catch {
         if (!cancelled) {

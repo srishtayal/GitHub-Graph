@@ -15,9 +15,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ValidationException.class, MethodArgumentNotValidException.class, ConstraintViolationException.class, IllegalArgumentException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, Object> handleBadRequest(Exception exception) {
+        String code = exception instanceof ValidationException validationException
+                ? validationException.getCode()
+                : "VALIDATION_FAILED";
         return Map.of(
                 "timestamp", Instant.now().toString(),
                 "error", "BAD_REQUEST",
+                "code", code,
+                "message", exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Map<String, Object> handleExternalService(ExternalServiceException exception) {
+        return Map.of(
+                "timestamp", Instant.now().toString(),
+                "error", "SERVICE_UNAVAILABLE",
+                "code", exception.getCode(),
                 "message", exception.getMessage()
         );
     }

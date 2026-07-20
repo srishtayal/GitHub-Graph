@@ -3,6 +3,7 @@ package com.githubgraph.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.githubgraph.api.domain.ingestion.IngestionFailureCategory;
 import com.githubgraph.api.domain.ingestion.IngestionJobStatus;
 import com.githubgraph.api.dto.AnalysisServiceRequest;
 import com.githubgraph.api.dto.AnalysisServiceResponse;
@@ -14,6 +15,7 @@ import com.githubgraph.api.dto.IngestionJobResponse;
 import com.githubgraph.api.dto.RepositorySummaryResponse;
 import com.githubgraph.api.dto.SymbolSummaryResponse;
 import com.githubgraph.api.exception.NotFoundException;
+import com.githubgraph.api.exception.IngestionException;
 import com.githubgraph.api.job.IngestionJobExecutor;
 import com.githubgraph.api.persistence.entity.AnalysisResultEntity;
 import com.githubgraph.api.persistence.entity.CodeSymbolEntity;
@@ -41,6 +43,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class IngestionOrchestratorService {
@@ -54,6 +58,7 @@ public class IngestionOrchestratorService {
     private final ImportRelationJpaRepository importRelationJpaRepository;
     private final AnalysisResultJpaRepository analysisResultJpaRepository;
     private final GithubUrlValidator githubUrlValidator;
+    private final GithubRepositoryValidationService githubRepositoryValidationService;
     private final RepositoryCloneService repositoryCloneService;
     private final AnalysisClientService analysisClientService;
     private final RepositoryGraphService repositoryGraphService;
@@ -70,6 +75,7 @@ public class IngestionOrchestratorService {
             ImportRelationJpaRepository importRelationJpaRepository,
             AnalysisResultJpaRepository analysisResultJpaRepository,
             GithubUrlValidator githubUrlValidator,
+            GithubRepositoryValidationService githubRepositoryValidationService,
             RepositoryCloneService repositoryCloneService,
             AnalysisClientService analysisClientService,
             RepositoryGraphService repositoryGraphService,
@@ -85,6 +91,7 @@ public class IngestionOrchestratorService {
         this.importRelationJpaRepository = importRelationJpaRepository;
         this.analysisResultJpaRepository = analysisResultJpaRepository;
         this.githubUrlValidator = githubUrlValidator;
+        this.githubRepositoryValidationService = githubRepositoryValidationService;
         this.repositoryCloneService = repositoryCloneService;
         this.analysisClientService = analysisClientService;
         this.repositoryGraphService = repositoryGraphService;
@@ -95,6 +102,7 @@ public class IngestionOrchestratorService {
     @Transactional
     public CreateIngestionResponse createIngestion(CreateIngestionRequest request) {
         GithubRepoRef repoRef = githubUrlValidator.validateAndNormalize(request.githubUrl());
+        githubRepositoryValidationService.verifyPublic(repoRef);
 
         RepositoryEntity repository = repositoryJpaRepository.findByGithubUrl(repoRef.normalizedUrl())
                 .orElseGet(() -> createRepository(repoRef));
@@ -105,7 +113,7 @@ public class IngestionOrchestratorService {
         job.setStatus(IngestionJobStatus.PENDING.name());
         ingestionJobJpaRepository.saveAndFlush(job);
 
-        ingestionJobExecutor.processAsync(job.getId());
+        dispatchAfterCommit(job.getId());
         return new CreateIngestionResponse(job.getId().toString(), repository.getId().toString(), job.getStatus());
     }
 
@@ -220,7 +228,8 @@ public class IngestionOrchestratorService {
             if (errorMessage == null && exception.getCause() != null) {
                 errorMessage = exception.getCause().getMessage();
             }
-            updateJobStatus(job, IngestionJobStatus.FAILED, errorMessage);
+            IngestionFailureCategory category = failureCategory(job, exception);
+            updateJobStatus(job, IngestionJobStatus.FAILED, errorMessage, category);
         }
     }
 
@@ -318,10 +327,46 @@ public class IngestionOrchestratorService {
         return repositoryJpaRepository.save(repository);
     }
 
+    private void dispatchAfterCommit(UUID ingestionJobId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            ingestionJobExecutor.processAsync(ingestionJobId);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                ingestionJobExecutor.processAsync(ingestionJobId);
+            }
+        });
+    }
+
     private void updateJobStatus(IngestionJobEntity job, IngestionJobStatus status, String errorMessage) {
+        updateJobStatus(job, status, errorMessage, null);
+    }
+
+    private void updateJobStatus(
+            IngestionJobEntity job,
+            IngestionJobStatus status,
+            String errorMessage,
+            IngestionFailureCategory errorCategory
+    ) {
         job.setStatus(status.name());
         job.setErrorMessage(errorMessage);
+        job.setErrorCategory(errorCategory != null ? errorCategory.name() : null);
         ingestionJobJpaRepository.save(job);
+    }
+
+    private IngestionFailureCategory failureCategory(IngestionJobEntity job, Exception exception) {
+        if (exception instanceof IngestionException ingestionException) {
+            return ingestionException.getCategory();
+        }
+        return switch (IngestionJobStatus.valueOf(job.getStatus())) {
+            case VALIDATING -> IngestionFailureCategory.VALIDATION_FAILED;
+            case CLONING -> IngestionFailureCategory.CLONE_FAILED;
+            case ANALYZING -> IngestionFailureCategory.ANALYSIS_FAILED;
+            case STORING -> IngestionFailureCategory.STORAGE_FAILED;
+            default -> IngestionFailureCategory.INTERNAL_ERROR;
+        };
     }
 
     private IngestionJobResponse mapJob(IngestionJobEntity job) {
@@ -330,6 +375,7 @@ public class IngestionOrchestratorService {
                 job.getRepository().getId().toString(),
                 job.getStatus(),
                 job.getErrorMessage(),
+                job.getErrorCategory(),
                 formatInstant(job.getCreatedAt()),
                 formatInstant(job.getStartedAt()),
                 formatInstant(job.getFinishedAt())

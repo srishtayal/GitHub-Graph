@@ -35,6 +35,9 @@ public class IngestionJobEntity {
     @Column(name = "error_message")
     private String errorMessage;
 
+    @Column(name = "error_category")
+    private String errorCategory;
+
     @Column(name = "started_at")
     private Instant startedAt;
 
@@ -104,6 +107,14 @@ public class IngestionJobEntity {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public String getErrorCategory() {
+        return errorCategory;
+    }
+
+    public void setErrorCategory(String errorCategory) {
+        this.errorCategory = errorCategory;
     }
 
     public Instant getStartedAt() {

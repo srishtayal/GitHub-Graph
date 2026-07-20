@@ -13,20 +13,20 @@ public class GithubUrlValidator {
         try {
             uri = new URI(githubUrl.trim());
         } catch (URISyntaxException exception) {
-            throw new ValidationException("Invalid GitHub URL");
+            throw new ValidationException("INVALID_GITHUB_URL", "Invalid GitHub URL");
         }
 
         if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new ValidationException("Only https GitHub URLs are supported");
+            throw new ValidationException("UNSUPPORTED_GITHUB_URL", "Only https GitHub URLs are supported");
         }
 
         if (!"github.com".equalsIgnoreCase(uri.getHost())) {
-            throw new ValidationException("Only github.com repository URLs are supported");
+            throw new ValidationException("UNSUPPORTED_GITHUB_URL", "Only github.com repository URLs are supported");
         }
 
         String path = uri.getPath();
         if (path == null || path.isBlank()) {
-            throw new ValidationException("Repository path is missing");
+            throw new ValidationException("INVALID_GITHUB_URL", "Repository path is missing");
         }
 
         String sanitized = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
@@ -36,7 +36,10 @@ public class GithubUrlValidator {
 
         String[] segments = sanitized.split("/");
         if (segments.length != 3 || segments[1].isBlank() || segments[2].isBlank()) {
-            throw new ValidationException("GitHub URL must be in the form https://github.com/{owner}/{repo}");
+            throw new ValidationException(
+                    "INVALID_GITHUB_URL",
+                    "GitHub URL must be in the form https://github.com/{owner}/{repo}"
+            );
         }
 
         String normalizedUrl = "https://github.com/%s/%s".formatted(segments[1], segments[2]);

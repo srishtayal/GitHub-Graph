@@ -5,6 +5,7 @@ public record IngestionJobResponse(
         String repositoryId,
         String status,
         String errorMessage,
+        String errorCategory,
         String createdAt,
         String startedAt,
         String finishedAt

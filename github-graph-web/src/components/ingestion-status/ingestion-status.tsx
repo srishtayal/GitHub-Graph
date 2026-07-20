@@ -44,7 +44,11 @@ export function IngestionStatus({ jobId }: IngestionStatusProps) {
       <p className="hint">Repository ID: {job?.repositoryId ?? "Pending"}</p>
       <p className="hint">Started: {job?.startedAt ?? "Not started yet"}</p>
       <p className="hint">Finished: {job?.finishedAt ?? "Still running"}</p>
-      {job?.errorMessage ? <p className="hint">Error: {job.errorMessage}</p> : null}
+      {job?.errorMessage ? (
+        <p className="hint">
+          Error{job.errorCategory ? ` (${job.errorCategory})` : ""}: {job.errorMessage}
+        </p>
+      ) : null}
     </section>
   );
 }

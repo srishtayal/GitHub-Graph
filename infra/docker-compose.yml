@@ -9,6 +9,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   neo4j:
     image: neo4j:5
@@ -19,25 +25,46 @@ services:
       - "7687:7687"
     volumes:
       - neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://localhost:7474 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 10s
 
   analysis:
     build:
       context: ../github-graph-analysis
     environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
     ports:
       - "${ANALYSIS_PORT}:8000"
     volumes:
       - repo-cache:/workspace/repos
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/internal/v1/health', timeout=2)"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   api:
     build:
       context: ../github-graph-api
     depends_on:
-      - postgres
-      - neo4j
-      - analysis
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      analysis:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -47,16 +74,26 @@ services:
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: githubgraph
       ANALYSIS_BASE_URL: http://analysis:8000
       REPOSITORY_CLONE_ROOT: /workspace/repos
+      REPOSITORY_CLONE_TIMEOUT_SECONDS: ${REPOSITORY_CLONE_TIMEOUT_SECONDS:-120}
+      REPOSITORY_CLONE_MAX_SIZE_BYTES: ${REPOSITORY_CLONE_MAX_SIZE_BYTES:-262144000}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     ports:
       - "${API_PORT}:8080"
     volumes:
       - repo-cache:/workspace/repos
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 18
+      start_period: 15s
 
   web:
     build:
       context: ../github-graph-web
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_PORT}
     ports:

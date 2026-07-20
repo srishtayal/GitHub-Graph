@@ -33,3 +33,13 @@ github-graph:
     base-url: ${ANALYSIS_BASE_URL:http://localhost:8000}
   clone:
     root: ${REPOSITORY_CLONE_ROOT:/tmp/github-graph/repos}
+    timeout-seconds: ${REPOSITORY_CLONE_TIMEOUT_SECONDS:120}
+    max-size-bytes: ${REPOSITORY_CLONE_MAX_SIZE_BYTES:262144000}
+    poll-interval-millis: ${REPOSITORY_CLONE_POLL_INTERVAL_MILLIS:250}
+  github:
+    api-base-url: ${GITHUB_API_BASE_URL:https://api.github.com}
+    token: ${GITHUB_TOKEN:}
+  neo4j-initialization:
+    max-attempts: ${NEO4J_INITIALIZATION_MAX_ATTEMPTS:12}
+    initial-backoff-millis: ${NEO4J_INITIALIZATION_INITIAL_BACKOFF_MILLIS:500}
+    max-backoff-millis: ${NEO4J_INITIALIZATION_MAX_BACKOFF_MILLIS:5000}
