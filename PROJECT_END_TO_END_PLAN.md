@@ -77,18 +77,18 @@ calls, inheritance, API routes, and resolvable module dependencies.
 
 ## 4. Current Audited Baseline
 
-The following status reflects the verified repository state before this plan
-was created.
+The following status reflects the verified repository state after completion
+of the Phase 2 reliability and Phase 6 integration work.
 
 | Phase | Current status | Main gap |
 |---|---|---|
 | 1. Scope and architecture | Substantially complete | Canonical product scope was spread across multiple documents. |
-| 2. Ingestion and indexing | Mostly complete | Explicit public-repository verification and reliable dependency readiness are missing. |
+| 2. Ingestion and indexing | Complete for the Python-first scope | Public-repository verification, bounded cloning, persistent snapshots, health checks, and startup retries are implemented. |
 | 3. Static extraction | Complete for Python | Java, JavaScript, and TypeScript deep parsing remain future work. |
 | 4. Code graph | Complete for Python analysis | Interactive graph exploration belongs to Phase 8. |
 | 5. Graph analytics | Complete at backend/API level | Frontend analytics views remain for Phase 8. |
-| 6. Similarity and bug localization | Engine complete, integration incomplete | No HTTP API, durable failure history, backend facade, or frontend consumer. |
-| 7. AI explanation | Not started | Requires stable Phase 5 and 6 APIs first. |
+| 6. Similarity and bug localization | Complete at backend/API level | Interactive similarity and error-analysis views belong to Phase 8. |
+| 7. AI explanation | Explanation engine complete, orchestration incomplete | Grounded query routing, automatic evidence gathering, and the public query facade remain. |
 | 8. Frontend and visualization | Partially started | Current UI shows extraction and graph previews, not a full explorer. |
 | 9. Production features | Partially started | Async jobs and persistence exist; auth, retries, caching, history UI, and large-repo controls are missing. |
 | 10. Placement polish | Partially started | Phase documents exist; benchmarks, case studies, video, and final architecture pack are missing. |
@@ -102,14 +102,17 @@ Verified baseline:
 - A real public Python repository can be ingested successfully.
 - Extracted graph data is persisted in Neo4j and returned through the backend.
 - Phase 5 analytics endpoints work against persisted graph data.
-- Phase 6 engines work when called directly as Python services.
+- Phase 6 similarity, clustering, localization, and durable failure history work
+  through public Spring Boot APIs.
+- A real-service integration suite verifies PostgreSQL, Neo4j, Python analysis,
+  API restart persistence, confirmed-root-cause feedback, and snapshot isolation.
 
-Known runtime issue:
+Resolved foundation gaps:
 
-- The API may start before Neo4j is ready. The Neo4j schema initializer can
-  fail and stop the API container. Compose health checks, readiness conditions,
-  and/or application-level retry logic must be added before the stack is
-  considered reliable.
+- Compose health checks gate dependent services, and Neo4j schema initialization
+  uses bounded retry with backoff.
+- Repository visibility is checked through GitHub before an ingestion job is
+  created.
 
 ## 5. Target Architecture
 
@@ -1302,8 +1305,8 @@ Suggested branch patterns:
 - [x] Repository cloning
 - [x] Commit and snapshot metadata
 - [x] File and language indexing
-- [ ] Explicit public visibility verification
-- [ ] Reliable dependency readiness and startup retry
+- [x] Explicit public visibility verification
+- [x] Reliable dependency readiness and startup retry
 
 ### Static analysis and graph
 
@@ -1329,9 +1332,10 @@ Suggested branch patterns:
 - [x] Similarity clustering engine
 - [x] Failure-path parser
 - [x] Root-cause ranking engine
-- [ ] Phase 6 HTTP APIs
-- [ ] Durable failure history
-- [ ] Phase 6 backend facade
+- [x] Phase 6 HTTP APIs
+- [x] Durable failure history
+- [x] Phase 6 backend facade
+- [x] Real-service Phase 6 integration and persistence test
 - [ ] Analytics and intelligence frontend
 
 ### AI and visualization

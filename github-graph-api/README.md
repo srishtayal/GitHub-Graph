@@ -34,3 +34,35 @@ PATCH /api/v1/failures/{failureId}
 Add `snapshotId` to select an exact repository snapshot. If omitted, the latest
 snapshot is used. Public callers never submit a graph payload; the API reads it
 from Neo4j and reads matching failure history from PostgreSQL.
+
+## Grounded explanation API
+
+```text
+POST /api/v1/explanations/query
+```
+
+The request needs only `repositoryId` and `query`; `targetNodeId`, `stackTrace`,
+and `errorLog` are optional. The API loads the latest graph and snapshot-scoped
+failure history before calling Python orchestration.
+
+```json
+{
+  "repositoryId": "2107ec31-c527-4321-8a51-49fddf8c45c9",
+  "query": "What is the repository structure?"
+}
+```
+
+Provider failures return `502 Bad Gateway`. An unavailable or unconfigured
+analysis service returns `503 Service Unavailable`.
+
+## Real-service integration test
+
+From the repository root, run:
+
+```bash
+bash infra/run-stage2-integration.sh
+```
+
+This exercises the public intelligence and failure-history APIs against real
+PostgreSQL, Neo4j, and Python analysis containers, including an API restart and
+snapshot-isolation assertions.

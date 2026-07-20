@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.githubgraph.api.config.AppProperties;
+import com.githubgraph.api.exception.BadGatewayException;
 import com.githubgraph.api.exception.ExternalServiceException;
 import com.githubgraph.api.exception.ValidationException;
 import java.io.IOException;
@@ -42,6 +43,10 @@ public class IntelligenceClientService {
         return post("/internal/v1/intelligence/localize", request);
     }
 
+    public JsonNode queryExplanation(Object request) {
+        return post("/internal/v1/explanations/query", request);
+    }
+
     private JsonNode post(String path, Object request) {
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -54,6 +59,12 @@ public class IntelligenceClientService {
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return objectMapper.readTree(response.body());
             }
+            if (response.statusCode() == 502) {
+                throw new BadGatewayException(
+                        "EXPLANATION_PROVIDER_FAILED",
+                        "Explanation provider could not produce a valid grounded response"
+                );
+            }
             if (response.statusCode() >= 400 && response.statusCode() < 500) {
                 throw new ValidationException(
                         "INTELLIGENCE_REQUEST_INVALID",
@@ -65,7 +76,7 @@ public class IntelligenceClientService {
                     "Intelligence service failed with status " + response.statusCode(),
                     null
             );
-        } catch (ValidationException | ExternalServiceException exception) {
+        } catch (ValidationException | ExternalServiceException | BadGatewayException exception) {
             throw exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();

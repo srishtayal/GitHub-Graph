@@ -68,3 +68,24 @@ curl "http://localhost:8080/api/v1/analytics/impact/<nodeId>?repositoryId=<repos
 curl "http://localhost:8080/api/v1/analytics/path/<nodeId>?repositoryId=<repositoryId>"
 curl "http://localhost:8080/api/v1/analytics/components?repositoryId=<repositoryId>"
 ```
+
+## Stage 2 real-service integration test
+
+Run the isolated black-box integration suite from the repository root:
+
+```bash
+bash infra/run-stage2-integration.sh
+```
+
+The suite builds and starts a separate Docker Compose project containing the
+real Spring Boot API, PostgreSQL, Neo4j, and Python analysis service. It:
+
+- seeds two snapshots of one repository;
+- creates and resolves a failure through the public API;
+- confirms a graph node as the root cause;
+- proves that the confirmed cause increases a later localization score;
+- restarts the API and verifies that the failure still exists;
+- proves that failure history is isolated by snapshot.
+
+The test uses dedicated volumes and removes them when it finishes. Set
+`KEEP_STAGE2_TEST_STACK=1` to retain the isolated stack for debugging.
