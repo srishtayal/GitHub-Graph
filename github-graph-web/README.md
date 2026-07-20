@@ -17,3 +17,14 @@ npm run dev
 ```
 
 Set `NEXT_PUBLIC_API_BASE_URL` to the backend URL.
+
+## Production build
+
+```bash
+npm ci
+npm run build
+npm run start
+```
+
+The Docker image uses the same production build and starts Next.js with
+`npm run start`.

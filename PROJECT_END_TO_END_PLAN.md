@@ -88,7 +88,7 @@ of the Phase 2 reliability and Phase 6 integration work.
 | 4. Code graph | Complete for Python analysis | Interactive graph exploration belongs to Phase 8. |
 | 5. Graph analytics | Complete at backend/API level | Frontend analytics views remain for Phase 8. |
 | 6. Similarity and bug localization | Complete at backend/API level | Interactive similarity and error-analysis views belong to Phase 8. |
-| 7. AI explanation | Explanation engine complete, orchestration incomplete | Grounded query routing, automatic evidence gathering, and the public query facade remain. |
+| 7. AI explanation | Complete at backend/API level | Conversation and explanation views belong to Phase 8. |
 | 8. Frontend and visualization | Partially started | Current UI shows extraction and graph previews, not a full explorer. |
 | 9. Production features | Partially started | Async jobs and persistence exist; auth, retries, caching, history UI, and large-repo controls are missing. |
 | 10. Placement polish | Partially started | Phase documents exist; benchmarks, case studies, video, and final architecture pack are missing. |
@@ -106,6 +106,9 @@ Verified baseline:
   through public Spring Boot APIs.
 - A real-service integration suite verifies PostgreSQL, Neo4j, Python analysis,
   API restart persistence, confirmed-root-cause feedback, and snapshot isolation.
+- A Stage 4 clean-stack suite verifies real public ingestion, extraction/graph
+  parity, all six analytics endpoints, Phase 6 workflows, frontend production
+  build, and optional grounded AI citation integrity.
 
 Resolved foundation gaps:
 
@@ -1340,10 +1343,10 @@ Suggested branch patterns:
 
 ### AI and visualization
 
-- [ ] Evidence retrieval
-- [ ] Grounded explanation API
-- [ ] Prompt-injection defenses
-- [ ] AI evaluation suite
+- [x] Evidence retrieval
+- [x] Grounded explanation API
+- [x] Prompt-injection defenses
+- [x] AI citation and adversarial evaluation suite
 - [ ] Interactive graph explorer
 - [ ] Node detail panel
 - [ ] Similarity view

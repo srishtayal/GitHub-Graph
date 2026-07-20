@@ -1,9 +1,15 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS source
 
 WORKDIR /build
 
 COPY pom.xml pom.xml
 COPY src src
+
+FROM source AS test
+
+RUN mvn test
+
+FROM source AS build
 
 RUN mvn -q -DskipTests package
 

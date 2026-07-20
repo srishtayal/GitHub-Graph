@@ -109,3 +109,20 @@ Unit tests use an injected fake transport. Adversarial fixtures cover prompt
 injection, invented evidence, unsupported graph references, retries, and
 insufficient evidence. A live provider smoke test should use a fully synthetic
 graph so repository data is not exported merely to test provider connectivity.
+
+## End-to-end verification
+
+When `STAGE4_INCLUDE_AI=1`, `infra/e2e/stage4_e2e.py` asks:
+
+- `Explain this dependency flow.`
+- `What breaks if this function fails?`
+- `Why is this error happening?`
+
+The verifier rejects responses that have no supporting evidence, cite an
+unsupported evidence ID/source pair, reference a node or edge outside the
+persisted snapshot graph, omit snapshot/model versions, or present a bug cause
+without hypothesis language.
+
+AI mode is intentionally opt-in because it sends bounded public-repository graph
+evidence to Gemini. The non-AI Stage 4 gates and synthetic provider smoke tests
+do not require exporting an ingested repository graph.

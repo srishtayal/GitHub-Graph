@@ -416,6 +416,23 @@ Mounted into:
 14. Wire Docker Compose
 15. Run smoke test
 
+## 9. Final implementation state
+
+Phase 2 is implemented for public repositories:
+
+- GitHub URLs are normalized and checked for existence and public visibility
+  before a job is created.
+- Clone operations have a timeout and retained-size limit.
+- PostgreSQL, Neo4j, and analysis-service health checks gate API startup.
+- Neo4j schema initialization uses bounded retry and backoff.
+- Repository snapshots, commit metadata, indexes, and clone directories persist
+  across ordinary restarts.
+- Stage 4 black-box verification ingests a real public Python repository from a
+  clean isolated Docker stack and polls it through `COMPLETED`.
+
+Run `bash infra/run-stage4-e2e.sh` from the repository root for the final
+ingestion acceptance gate.
+
 ## 8. Minimal files/classes/modules to create first
 
 ### Backend
