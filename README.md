@@ -39,6 +39,8 @@ See [infra/README.md](infra/README.md) for configuration and startup details.
   dependency/impact maps, similarity, error localization, and cited AI views.
 - Phase 9: account-ready repository catalog, analysis history, retryable jobs,
   scan reuse, bounded large-repository analysis, and JSON/PDF report exports.
+- Phase 10: placement-ready architecture diagram, one-page write-up,
+  benchmarks, case studies, demo storyboard, and resume bullets.
 - Stage 4: repeatable clean-stack end-to-end and quality-gate automation.
 
 Deep static extraction is currently Python-only. Java, JavaScript, and
@@ -77,6 +79,12 @@ importable [Postman collection](docs/postman/GitHub-Graph.postman_collection.jso
 - [Phase 7 explanations](PHASE_7.md)
 - [Phase 8 frontend and visualization](PHASE_8.md)
 - [Phase 9 production features](PHASE_9.md)
+- [Phase 10 placement polish](PHASE_10.md)
+- [Architecture diagram](docs/ARCHITECTURE_DIAGRAM.md)
+- [Placement one-pager](docs/PLACEMENT_ONE_PAGER.md)
+- [Benchmarks](docs/BENCHMARKS.md)
+- [Case studies](docs/CASE_STUDIES.md)
+- [Demo video storyboard](docs/DEMO_VIDEO.md)
 - [Stage 4 verification](STAGE_4_VERIFICATION.md)
 - [End-to-end project plan](PROJECT_END_TO_END_PLAN.md)
 - [Testing guide](docs/testing.md)

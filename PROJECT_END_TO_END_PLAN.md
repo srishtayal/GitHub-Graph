@@ -91,7 +91,7 @@ of the Phase 8 frontend and visualization work.
 | 7. AI explanation | Complete | Grounded public API and cited conversation interface are implemented. |
 | 8. Frontend and visualization | Complete for the single-repository scope | Server-backed repository catalog and report exports belong to Phase 9. |
 | 9. Production features | Complete for the single-instance deployment scope | Authentication, saved repositories, snapshot history, report exports, scan reuse, retries, and large-repo bounds are implemented. Redis/broker/object-storage scaling remains optional future infrastructure. |
-| 10. Placement polish | Partially started | Phase documents exist; benchmarks, case studies, video, and final architecture pack are missing. |
+| 10. Placement polish | Complete | Architecture diagram, one-page write-up, measured benchmark snapshot, case studies, demo-video storyboard, and resume bullets are available in `docs/`. |
 
 Verified baseline:
 

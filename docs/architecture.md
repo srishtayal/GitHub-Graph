@@ -1,5 +1,9 @@
 # Architecture
 
+For the complete interview-ready system diagram and end-to-end request flow,
+see [Architecture Diagram](ARCHITECTURE_DIAGRAM.md). This page retains the
+Phase 5 algorithm-layering rationale.
+
 ## Where Phase 5 fits
 
 The system currently has:
