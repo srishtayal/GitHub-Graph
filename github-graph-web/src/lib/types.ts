@@ -15,42 +15,68 @@ export type IngestionJob = {
   finishedAt: string | null;
 };
 
+export type RepositorySnapshot = {
+  snapshotId: string;
+  branchName: string;
+  commitSha: string;
+  totalFiles: number;
+  totalDirectories: number;
+  languageSummary: Record<string, number>;
+};
+
 export type RepositorySummary = {
   repositoryId: string;
   githubUrl: string;
   owner: string;
   name: string;
   status: string;
-  latestSnapshot: {
-    snapshotId: string;
-    branchName: string;
-    commitSha: string;
-    totalFiles: number;
-    totalDirectories: number;
-    languageSummary: Record<string, number>;
-  } | null;
+  latestSnapshot: RepositorySnapshot | null;
+};
+
+export type RepositoryFile = {
+  fileId: string;
+  relativePath: string;
+  language: string | null;
+  sizeBytes: number;
 };
 
 export type RepositoryFileList = {
-  items: Array<{
-    fileId: string;
-    relativePath: string;
-    language: string | null;
-    sizeBytes: number;
-  }>;
+  items: RepositoryFile[];
+};
+
+export type RepositorySymbol = {
+  symbolId: string;
+  fileId: string | null;
+  symbolType: string;
+  name: string;
+  qualifiedName: string | null;
+  language: string | null;
+  startLine: number | null;
+  endLine: number | null;
 };
 
 export type RepositorySymbolList = {
-  items: Array<{
-    symbolId: string;
-    fileId: string | null;
-    symbolType: string;
-    name: string;
-    qualifiedName: string | null;
-    language: string | null;
-    startLine: number | null;
-    endLine: number | null;
-  }>;
+  items: RepositorySymbol[];
+};
+
+export type GraphNode = {
+  id: string;
+  type: string;
+  label: string;
+  properties: Record<string, unknown>;
+};
+
+export type GraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+  properties: Record<string, unknown>;
+};
+
+export type RepositoryGraph = {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 };
 
 export type RepositoryAnalysis = {
@@ -124,18 +150,195 @@ export type RepositoryAnalysis = {
   }>;
 };
 
-export type RepositoryGraph = {
+export type AnalyticsNode = GraphNode;
+
+export type TraversalNode = {
+  node: AnalyticsNode;
+  depth: number;
+  predecessorNodeId: string | null;
+  viaEdgeType: string | null;
+};
+
+export type DependencyPathResponse = {
+  repositoryId: string;
+  startNodeId: string;
+  traversalOrder: TraversalNode[];
+};
+
+export type ImpactAnalysisResponse = {
+  repositoryId: string;
+  startNodeId: string;
+  totalAffectedNodes: number;
+  affectedNodes: TraversalNode[];
+};
+
+export type ConnectedComponentsResponse = {
+  repositoryId: string;
+  totalComponents: number;
+  components: Array<{
+    id: string;
+    size: number;
+    nodes: AnalyticsNode[];
+  }>;
+};
+
+export type CycleDetectionResponse = {
+  repositoryId: string;
+  hasCycles: boolean;
+  totalCycles: number;
+  cycles: Array<{ nodeIds: string[] }>;
+};
+
+export type TopologicalOrderResponse = {
+  repositoryId: string;
+  acyclic: boolean;
+  message: string;
+  order: AnalyticsNode[];
+  cycles: string[][];
+};
+
+export type CriticalNodesResponse = {
+  repositoryId: string;
+  totalReturned: number;
   nodes: Array<{
-    id: string;
-    type: string;
-    label: string;
-    properties: Record<string, unknown>;
+    node: AnalyticsNode;
+    inDegree: number;
+    outDegree: number;
+    totalDegree: number;
+    degreeCentrality: number;
   }>;
-  edges: Array<{
-    id: string;
-    source: string;
-    target: string;
-    type: string;
-    properties: Record<string, unknown>;
+};
+
+export type FeatureSimilarity = {
+  score: number;
+  matchedFeatures: string[];
+};
+
+export type SimilarityRanking = {
+  targetNodeId: string;
+  nodeType: string;
+  results: Array<{
+    targetNodeId: string;
+    candidateNodeId: string;
+    nodeType: string;
+    score: number;
+    featureScores: Record<string, FeatureSimilarity>;
+    clusterId: string | null;
   }>;
+};
+
+export type ClusterResult = {
+  nodeType: string;
+  threshold: number;
+  clusters: Array<{
+    clusterId: string;
+    nodeType: string;
+    threshold: number;
+    memberNodeIds: string[];
+    links: Array<{
+      sourceNodeId: string;
+      targetNodeId: string;
+      score: number;
+    }>;
+  }>;
+};
+
+export type BugLocalizationResult = {
+  resolvedFailurePath: {
+    nodeIds: string[];
+    stackFrameNodeIds: string[];
+    errorSignature: {
+      exceptionType: string | null;
+      messageFingerprint: string | null;
+    };
+    unresolvedReferences: Array<{
+      kind: string;
+      value: string;
+      detail: string | null;
+    }>;
+  };
+  impactedNodeIds: string[];
+  similarPastFailures: Array<{
+    failureId: string;
+    similarity: number;
+  }>;
+  suspectedRootCauses: Array<{
+    nodeId: string;
+    score: number;
+    confidence: string;
+    reasons: Array<{
+      kind: string;
+      weight: number;
+      detail: string | null;
+    }>;
+  }>;
+  reasoningMetadata: Record<string, unknown>;
+};
+
+export type FailureRecord = {
+  failureId: string;
+  repositoryId: string;
+  snapshotId: string;
+  status: string;
+  failingNodeId: string | null;
+  errorLog: string | null;
+  stackTrace: string | null;
+  errorSignature: {
+    exceptionType: string | null;
+    messageFingerprint: string | null;
+  };
+  resolvedFailurePathNodeIds: string[];
+  confirmedRootCauseNodeIds: string[];
+  resolutionNotes: string | null;
+  occurredAt: string;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  localization: BugLocalizationResult | null;
+};
+
+export type FailureCollection = {
+  repositoryId: string;
+  snapshotId: string | null;
+  failures: FailureRecord[];
+};
+
+export type ExplanationResponse = {
+  intent: string;
+  answer: string;
+  supportingEvidence: Array<{
+    evidenceId: string;
+    sourceType: string;
+    rationale: string;
+  }>;
+  referencedNodeIds: string[];
+  referencedEdgeIds: string[];
+  confidence: "high" | "medium" | "low" | "insufficient";
+  limitations: string[];
+  followUpSuggestions: string[];
+  snapshotMetadata: {
+    repositoryId: string;
+    snapshotId: string;
+    branchName: string | null;
+    commitSha: string | null;
+  };
+  modelMetadata: {
+    provider: string;
+    model: string;
+    promptVersion: string;
+    orchestrationVersion: string;
+  };
+};
+
+export type RepositoryWorkspaceData = {
+  summary: RepositorySummary;
+  files: RepositoryFileList;
+  symbols: RepositorySymbolList;
+  analysis: RepositoryAnalysis;
+  graph: RepositoryGraph;
+  critical: CriticalNodesResponse;
+  components: ConnectedComponentsResponse;
+  cycles: CycleDetectionResponse;
+  topologicalOrder: TopologicalOrderResponse;
+  failures: FailureCollection;
 };

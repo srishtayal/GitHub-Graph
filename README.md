@@ -35,6 +35,8 @@ See [infra/README.md](infra/README.md) for configuration and startup details.
   failure history, confirmed root causes, and feedback into later ranking.
 - Phase 7: automatic grounded-query orchestration, bounded Gemini evidence,
   strict citations, prompt-injection defenses, and snapshot/model metadata.
+- Phase 8: responsive repository dashboard, interactive graph explorer,
+  dependency/impact maps, similarity, error localization, and cited AI views.
 - Stage 4: repeatable clean-stack end-to-end and quality-gate automation.
 
 Deep static extraction is currently Python-only. Java, JavaScript, and
@@ -71,6 +73,7 @@ importable [Postman collection](docs/postman/GitHub-Graph.postman_collection.jso
 - [Phase 5 analytics](PHASE_5.md)
 - [Phase 6 intelligence](PHASE_6.md)
 - [Phase 7 explanations](PHASE_7.md)
+- [Phase 8 frontend and visualization](PHASE_8.md)
 - [Stage 4 verification](STAGE_4_VERIFICATION.md)
 - [End-to-end project plan](PROJECT_END_TO_END_PLAN.md)
 - [Testing guide](docs/testing.md)

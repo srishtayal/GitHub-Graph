@@ -124,3 +124,24 @@ STAGE4_INCLUDE_AI=1 bash infra/run-stage4-e2e.sh
 The AI gate validates evidence IDs and source types, graph node/edge references,
 snapshot metadata, model/prompt versions, and hypothesis language for root
 causes.
+
+## Phase 8 frontend contract verification
+
+The frontend includes a deterministic local API covering every Phase 8
+integration contract. Use it when the Docker backend is unavailable:
+
+```bash
+cd github-graph-web
+npm run e2e:mock-api
+```
+
+In a second terminal:
+
+```bash
+cd github-graph-web
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8180 npm run dev -- --port 4173
+```
+
+Open `http://127.0.0.1:4173/repositories/phase8-demo`. The fixture supports
+graph analytics, similarity, clustering, failure localization and persistence,
+root-cause confirmation, and grounded explanation citations.
