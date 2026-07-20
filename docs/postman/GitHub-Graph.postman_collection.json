@@ -1,0 +1,281 @@
+{
+  "info": {
+    "_postman_id": "9d739b3b-e4a7-4a67-8ccb-stage4githubgraph",
+    "name": "GitHub Graph - Phases 2-7",
+    "description": "Public API examples for ingestion, extraction, graph analytics, similarity, failure localization, history, and grounded explanations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "repositoryUrl",
+      "value": "https://github.com/pallets/itsdangerous"
+    },
+    {
+      "key": "repositoryId",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "snapshotId",
+      "value": ""
+    },
+    {
+      "key": "functionNodeId",
+      "value": ""
+    },
+    {
+      "key": "failureId",
+      "value": ""
+    },
+    {
+      "key": "rootCauseNodeId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Ingestion and repository",
+      "item": [
+        {
+          "name": "Ingest public repository",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"githubUrl\": \"{{repositoryUrl}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/repositories/ingestions"
+          }
+        },
+        {
+          "name": "Poll ingestion job",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/ingestion-jobs/{{jobId}}"
+          }
+        },
+        {
+          "name": "Repository summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}"
+          }
+        },
+        {
+          "name": "Extracted analysis JSON",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/analysis"
+          }
+        },
+        {
+          "name": "Persisted graph",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/graph"
+          }
+        },
+        {
+          "name": "Indexed files",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/files"
+          }
+        },
+        {
+          "name": "Indexed symbols",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/symbols"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phase 5 analytics",
+      "item": [
+        {
+          "name": "DFS dependency trace",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/path/{{functionNodeId}}?repositoryId={{repositoryId}}"
+          }
+        },
+        {
+          "name": "BFS impact spread",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/impact/{{functionNodeId}}?repositoryId={{repositoryId}}"
+          }
+        },
+        {
+          "name": "Connected components",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/components?repositoryId={{repositoryId}}"
+          }
+        },
+        {
+          "name": "Cycle detection",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/cycles?repositoryId={{repositoryId}}"
+          }
+        },
+        {
+          "name": "Topological order",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/topological-order?repositoryId={{repositoryId}}"
+          }
+        },
+        {
+          "name": "Critical nodes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/analytics/critical?repositoryId={{repositoryId}}&limit=20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phase 6 intelligence",
+      "item": [
+        {
+          "name": "Similar functions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/intelligence/similarity/{{functionNodeId}}?repositoryId={{repositoryId}}&snapshotId={{snapshotId}}&limit=10"
+          }
+        },
+        {
+          "name": "Localize stack trace",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repositoryId\": \"{{repositoryId}}\",\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"failingNodeId\": \"{{functionNodeId}}\",\n  \"stackTrace\": \"File \\\"/workspace/repository/example.py\\\", line 10, in example\\nRuntimeError: verification failure\",\n  \"errorLog\": \"RuntimeError: verification failure\",\n  \"failurePathNodeIds\": [\"{{functionNodeId}}\"],\n  \"configuration\": {\"maxTraversalDepth\": 2}\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/intelligence/failures/localize"
+          }
+        },
+        {
+          "name": "Store failure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"failingNodeId\": \"{{functionNodeId}}\",\n  \"errorLog\": \"RuntimeError: verification failure\",\n  \"failurePathNodeIds\": [\"{{functionNodeId}}\"],\n  \"occurredAt\": \"2026-07-20T12:00:00Z\",\n  \"localizationConfiguration\": {\"maxTraversalDepth\": 2}\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/failures"
+          }
+        },
+        {
+          "name": "Confirm root cause",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"confirmedRootCauseNodeIds\": [\"{{rootCauseNodeId}}\"],\n  \"resolutionNotes\": \"Confirmed during API verification.\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/failures/{{failureId}}"
+          }
+        },
+        {
+          "name": "List snapshot failures",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/repositories/{{repositoryId}}/failures?snapshotId={{snapshotId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phase 7 explanations",
+      "item": [
+        {
+          "name": "Explain dependency flow",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repositoryId\": \"{{repositoryId}}\",\n  \"query\": \"Explain this dependency flow.\",\n  \"targetNodeId\": \"{{functionNodeId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/explanations/query"
+          }
+        },
+        {
+          "name": "Explain impact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repositoryId\": \"{{repositoryId}}\",\n  \"query\": \"What breaks if this function fails?\",\n  \"targetNodeId\": \"{{functionNodeId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/explanations/query"
+          }
+        },
+        {
+          "name": "Explain error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repositoryId\": \"{{repositoryId}}\",\n  \"query\": \"Why is this error happening?\",\n  \"targetNodeId\": \"{{functionNodeId}}\",\n  \"errorLog\": \"RuntimeError: verification failure\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/explanations/query"
+          }
+        }
+      ]
+    }
+  ]
+}

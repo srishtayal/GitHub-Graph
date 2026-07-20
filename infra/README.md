@@ -49,3 +49,19 @@ size is 250 MiB. Override `REPOSITORY_CLONE_TIMEOUT_SECONDS` and
 
 PostgreSQL, Neo4j, and cloned repository snapshots use named Docker volumes, so
 ordinary container rebuilds and restarts preserve existing analyses.
+
+## Clean end-to-end verification
+
+From the repository root:
+
+```bash
+bash infra/run-stage4-e2e.sh
+```
+
+The script uses the separate `github-graph-stage4-e2e` Compose project and empty
+volumes, so it does not modify the normal development stack. It builds all
+quality gates, starts services with health dependencies, ingests a real public
+Python repository, and removes the isolated resources afterward.
+
+Set `STAGE4_INCLUDE_AI=1` only when external transfer of bounded public-repository
+evidence to Gemini is approved.

@@ -89,3 +89,38 @@ real Spring Boot API, PostgreSQL, Neo4j, and Python analysis service. It:
 
 The test uses dedicated volumes and removes them when it finishes. Set
 `KEEP_STAGE2_TEST_STACK=1` to retain the isolated stack for debugging.
+
+## Stage 4 end-to-end quality gate
+
+From the repository root:
+
+```bash
+bash infra/run-stage4-e2e.sh
+```
+
+This command:
+
+1. Builds the Python `test` image target, which runs the complete Python suite.
+2. Builds the Java `test` image target, which runs the complete Maven suite.
+3. Builds the production Next.js image with `npm run build`.
+4. Starts PostgreSQL, Neo4j, analysis, API, and web from empty isolated volumes.
+5. Ingests `https://github.com/pallets/itsdangerous` by default.
+6. Compares extracted graph IDs with persisted Neo4j graph IDs.
+7. Calls all six Phase 5 analytics endpoints.
+8. Verifies public similarity, stack localization, failure persistence, root
+   cause confirmation, and later-score influence.
+9. Runs the deterministic Stage 2 restart/snapshot-isolation integration suite.
+
+Override the repository with `STAGE4_REPOSITORY_URL`. Retain the isolated stack
+with `KEEP_STAGE4_TEST_STACK=1`.
+
+Grounded AI checks are opt-in because they send bounded public-repository
+evidence to Gemini:
+
+```bash
+STAGE4_INCLUDE_AI=1 bash infra/run-stage4-e2e.sh
+```
+
+The AI gate validates evidence IDs and source types, graph node/edge references,
+snapshot metadata, model/prompt versions, and hypothesis language for root
+causes.

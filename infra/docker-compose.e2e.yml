@@ -1,0 +1,147 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: github_graph_e2e
+      POSTGRES_USER: github_graph
+      POSTGRES_PASSWORD: github_graph
+    volumes:
+      - e2e-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U github_graph -d github_graph_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/e2epassword
+    volumes:
+      - e2e-neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://localhost:7474 || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 45
+      start_period: 5s
+
+  analysis:
+    build:
+      context: ../github-graph-analysis
+      target: runtime
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
+      GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
+      GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-2}
+      GEMINI_RETRY_BACKOFF_SECONDS: ${GEMINI_RETRY_BACKOFF_SECONDS:-0.5}
+      EXPLANATION_MAX_PROMPT_CHARS: ${EXPLANATION_MAX_PROMPT_CHARS:-30000}
+      EXPLANATION_MAX_EVIDENCE_CHARS: ${EXPLANATION_MAX_EVIDENCE_CHARS:-20000}
+    volumes:
+      - e2e-repo-cache:/workspace/repos
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/internal/v1/health', timeout=2)"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  api:
+    build:
+      context: ../github-graph-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      analysis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/github_graph_e2e
+      SPRING_DATASOURCE_USERNAME: github_graph
+      SPRING_DATASOURCE_PASSWORD: github_graph
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: e2epassword
+      ANALYSIS_BASE_URL: http://analysis:8000
+      REPOSITORY_CLONE_ROOT: /workspace/repos
+      REPOSITORY_CLONE_TIMEOUT_SECONDS: ${REPOSITORY_CLONE_TIMEOUT_SECONDS:-120}
+      REPOSITORY_CLONE_MAX_SIZE_BYTES: ${REPOSITORY_CLONE_MAX_SIZE_BYTES:-262144000}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      NEO4J_INITIALIZATION_MAX_ATTEMPTS: 20
+      NEO4J_INITIALIZATION_INITIAL_BACKOFF_MILLIS: 100
+      NEO4J_INITIALIZATION_MAX_BACKOFF_MILLIS: 1000
+    volumes:
+      - e2e-repo-cache:/workspace/repos
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 45
+      start_period: 5s
+
+  web:
+    build:
+      context: ../github-graph-web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://api:8080
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(response => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  test-runner:
+    image: python:3.11-slim
+    profiles: ["test"]
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://api:8080
+      ANALYSIS_BASE_URL: http://analysis:8000
+      WEB_BASE_URL: http://web:3000
+      STAGE4_REPOSITORY_URL: ${STAGE4_REPOSITORY_URL:-https://github.com/pallets/itsdangerous}
+      STAGE4_INCLUDE_AI: ${STAGE4_INCLUDE_AI:-0}
+    volumes:
+      - ./e2e:/tests:ro
+    working_dir: /tests
+
+  python-tests:
+    profiles: ["quality"]
+    build:
+      context: ../github-graph-analysis
+      target: test
+    command: ["python", "-c", "print('Python quality gate passed during image build')"]
+
+  java-tests:
+    profiles: ["quality"]
+    build:
+      context: ../github-graph-api
+      target: test
+    command: ["java", "-version"]
+
+volumes:
+  e2e-postgres-data:
+  e2e-neo4j-data:
+  e2e-repo-cache:

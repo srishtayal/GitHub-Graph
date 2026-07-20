@@ -88,3 +88,19 @@ PYTHONPATH=. python -m unittest \
   tests.test_failure_path_parser \
   tests.test_bug_localizer -v
 ```
+
+## End-to-end verification
+
+`infra/e2e/stage4_e2e.py` verifies Phase 6 through the public Spring API against
+an ingested repository. It dynamically selects function nodes, checks similarity
+ranking, submits a Python stack trace, stores the failure, confirms the highest
+ranked root-cause candidate, and proves that historical confirmation adds a
+`historical_failure_overlap` reason and increases its later score.
+
+The existing `infra/run-stage2-integration.sh` additionally proves restart
+persistence and snapshot isolation using deterministic fixtures. Both suites are
+run by:
+
+```bash
+bash infra/run-stage4-e2e.sh
+```
