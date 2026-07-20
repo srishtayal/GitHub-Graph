@@ -25,6 +25,16 @@ Run the complete Python suite with:
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
 
+## Internal intelligence APIs
+
+- `POST /internal/v1/intelligence/similarity`
+- `POST /internal/v1/intelligence/clusters`
+- `POST /internal/v1/intelligence/localize`
+
+These endpoints accept an internal `GraphPayload` plus configuration and return
+the existing Phase 6 Pydantic response models. Spring Boot loads graphs and
+failure history before calling them; frontend clients should use the public API.
+
 See [Phase 3](../PHASE_3.md) for the JSON contract, [Phase 4](../PHASE_4.md) for graph construction, and [Phase 5](../PHASE_5.md) for the approved Python analytics design.
 
 To run only the Phase 6 tests:

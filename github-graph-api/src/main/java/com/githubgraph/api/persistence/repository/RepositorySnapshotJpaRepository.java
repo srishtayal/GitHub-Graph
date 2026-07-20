@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface RepositorySnapshotJpaRepository extends JpaRepository<RepositorySnapshotEntity, UUID> {
 
     Optional<RepositorySnapshotEntity> findTopByRepositoryOrderByCreatedAtDesc(RepositoryEntity repository);
+
+    Optional<RepositorySnapshotEntity> findByIdAndRepository(UUID id, RepositoryEntity repository);
 }
