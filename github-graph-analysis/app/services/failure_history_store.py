@@ -12,7 +12,7 @@ class FailureHistoryStore(Protocol):
 
 
 class JsonFailureHistoryStore:
-    """Read repository-scoped historical failure records from a local JSON array."""
+    """Test-fixture adapter; runtime history is supplied by Spring from PostgreSQL."""
 
     def __init__(self, fixture_path: Path) -> None:
         self.fixture_path = fixture_path

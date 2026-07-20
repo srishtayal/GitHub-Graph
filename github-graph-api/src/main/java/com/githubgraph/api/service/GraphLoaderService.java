@@ -27,13 +27,24 @@ public class GraphLoaderService {
     }
 
     public LoadedGraph loadLatestGraph(String repositoryId) {
+        return loadGraph(repositoryId, null);
+    }
+
+    public LoadedGraph loadGraph(String repositoryId, String snapshotId) {
         UUID parsedRepositoryId = UUID.fromString(repositoryId);
         RepositoryEntity repository = repositoryJpaRepository.findById(parsedRepositoryId)
                 .orElseThrow(() -> new NotFoundException("Repository not found"));
-        RepositorySnapshotEntity snapshot = repositorySnapshotJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository)
-                .orElseThrow(() -> new NotFoundException("Repository snapshot not found"));
+        RepositorySnapshotEntity snapshot = snapshotId == null || snapshotId.isBlank()
+                ? repositorySnapshotJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository)
+                        .orElseThrow(() -> new NotFoundException("Repository snapshot not found"))
+                : loadOwnedSnapshot(repository, snapshotId);
         GraphView graph = repositoryGraphService.loadGraphView(parsedRepositoryId, snapshot);
         return new LoadedGraph(repository, snapshot, graph);
+    }
+
+    private RepositorySnapshotEntity loadOwnedSnapshot(RepositoryEntity repository, String snapshotId) {
+        return repositorySnapshotJpaRepository.findByIdAndRepository(UUID.fromString(snapshotId), repository)
+                .orElseThrow(() -> new NotFoundException("Repository snapshot not found"));
     }
 
     public record LoadedGraph(

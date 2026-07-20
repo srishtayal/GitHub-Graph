@@ -1,6 +1,6 @@
 # GitHub Graph - Phase 6
 
-Phase 6 adds the **Similarity and Bug-Localization Engine** to the Python analysis service. It consumes the existing Phase 3 `GraphPayload`, returns JSON-ready Pydantic models, and adds neither HTTP endpoints nor graph-schema changes.
+Phase 6 adds the **Similarity and Bug-Localization Engine** to the Python analysis service. It consumes the existing Phase 3 `GraphPayload`, returns JSON-ready Pydantic models, and is integrated through internal Python and public Spring Boot APIs.
 
 For the approved design, see [PHASE_6_SOLUTIONING.md](PHASE_6_SOLUTIONING.md).
 
@@ -10,7 +10,7 @@ For the approved design, see [PHASE_6_SOLUTIONING.md](PHASE_6_SOLUTIONING.md).
 - Same-type similarity ranking with deterministic ties.
 - Threshold-linked transitive clusters using connected components.
 - Failure-path resolution from node IDs, Python stack frames, and error logs.
-- JSON-backed historical-failure retrieval through an extensible store contract.
+- PostgreSQL-backed, repository-and-snapshot-scoped failure history.
 - Explainable root-cause ranking with confidence values.
 
 ## Graph Compatibility
@@ -30,7 +30,8 @@ Unresolved IDs and external stack frames remain outside the graph and appear in 
 | `SimilarityEngine` | Computes weighted Jaccard scores and rankings. |
 | `SimilarityClusterer` | Groups threshold-qualified similarity links transitively. |
 | `FailurePathParser` | Resolves failure evidence and records unresolved references. |
-| `JsonFailureHistoryStore` | Reads local JSON historical failures. |
+| `JsonFailureHistoryStore` | Reads deterministic JSON fixtures in tests only. |
+| `FailureHistoryService` | Persists runtime failure history in PostgreSQL. |
 | `BugLocalizer` | Discovers impacts, compares history, and ranks causes. |
 
 ## Default Similarity Weights
@@ -48,7 +49,30 @@ An aggregate score is the normalized weighted mean of enabled feature families. 
 
 The localizer traverses from resolved failure nodes up to a configured depth. Candidates receive explainable evidence from current path membership, resolved stack frames, confirmed causes of similar past failures, structural proximity, and local graph degree. High confidence requires direct path or stack evidence; unresolved evidence alone cannot produce it.
 
-Historical failures initially come from a JSON array containing `failureId`, `repositoryId`, `occurredAt`, `failurePathNodeIds`, `errorSignature`, optional `confirmedRootCauseNodeIds`, and `metadata`.
+Runtime historical failures come from PostgreSQL and are filtered by repository
+and snapshot before being sent to Python. JSON fixtures containing `failureId`,
+`repositoryId`, `occurredAt`, `failurePathNodeIds`, `errorSignature`, optional
+`confirmedRootCauseNodeIds`, and `metadata` remain available for unit tests.
+
+## HTTP Integration
+
+Internal Python endpoints:
+
+- `POST /internal/v1/intelligence/similarity`
+- `POST /internal/v1/intelligence/clusters`
+- `POST /internal/v1/intelligence/localize`
+
+Public Spring Boot endpoints:
+
+- `GET /api/v1/intelligence/similarity/{nodeId}?repositoryId=...`
+- `GET /api/v1/intelligence/clusters?repositoryId=...`
+- `POST /api/v1/intelligence/failures/localize`
+- `POST /api/v1/repositories/{repositoryId}/failures`
+- `GET /api/v1/repositories/{repositoryId}/failures`
+- `PATCH /api/v1/failures/{failureId}`
+
+All graph payloads are loaded by Spring Boot from Neo4j. Callers can optionally
+provide `snapshotId`; otherwise the latest snapshot is resolved.
 
 ## Testing
 
