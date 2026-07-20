@@ -1,98 +1,258 @@
 import { env } from "./env";
 import type {
+  BugLocalizationResult,
+  ClusterResult,
+  ConnectedComponentsResponse,
   CreateIngestionResponse,
+  CriticalNodesResponse,
+  CycleDetectionResponse,
+  DependencyPathResponse,
+  ExplanationResponse,
+  FailureCollection,
+  FailureRecord,
+  ImpactAnalysisResponse,
   IngestionJob,
-  RepositoryGraph,
   RepositoryAnalysis,
   RepositoryFileList,
+  RepositoryGraph,
   RepositorySummary,
-  RepositorySymbolList
+  RepositorySymbolList,
+  RepositoryWorkspaceData,
+  SimilarityRanking,
+  TopologicalOrderResponse
 } from "./types";
 
-export async function createIngestion(githubUrl: string): Promise<CreateIngestionResponse> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/ingestions`, {
-    method: "POST",
+type JsonPayload = Record<string, unknown>;
+
+async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  fallbackMessage = "The request could not be completed."
+): Promise<T> {
+  const response = await fetch(`${env.apiBaseUrl}${path}`, {
+    cache: "no-store",
+    ...options,
     headers: {
-      "Content-Type": "application/json"
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers
+    }
+  });
+
+  if (!response.ok) {
+    let message = fallbackMessage;
+    try {
+      const error = (await response.json()) as { message?: string; detail?: string };
+      message = error.message ?? error.detail ?? message;
+    } catch {
+      // Preserve the stable user-facing fallback when the body is not JSON.
+    }
+    throw new Error(message);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function repositoryQuery(repositoryId: string): string {
+  return new URLSearchParams({ repositoryId }).toString();
+}
+
+export function createIngestion(githubUrl: string): Promise<CreateIngestionResponse> {
+  return apiRequest<CreateIngestionResponse>(
+    "/api/v1/repositories/ingestions",
+    {
+      method: "POST",
+      body: JSON.stringify({ githubUrl })
     },
-    body: JSON.stringify({ githubUrl })
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to create ingestion job");
-  }
-
-  return response.json();
+    "Unable to start repository ingestion."
+  );
 }
 
-export async function getIngestionJob(jobId: string): Promise<IngestionJob> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/ingestion-jobs/${jobId}`, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch ingestion job");
-  }
-
-  return response.json();
+export function getIngestionJob(jobId: string): Promise<IngestionJob> {
+  return apiRequest<IngestionJob>(
+    `/api/v1/ingestion-jobs/${encodeURIComponent(jobId)}`,
+    {},
+    "Unable to fetch the ingestion job."
+  );
 }
 
-export async function getRepositorySummary(repositoryId: string): Promise<RepositorySummary> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}`, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch repository summary");
-  }
-
-  return response.json();
+export function getRepositorySummary(repositoryId: string): Promise<RepositorySummary> {
+  return apiRequest<RepositorySummary>(`/api/v1/repositories/${repositoryId}`);
 }
 
-export async function getRepositoryFiles(repositoryId: string): Promise<RepositoryFileList> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}/files`, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch repository files");
-  }
-
-  return response.json();
+export function getRepositoryFiles(repositoryId: string): Promise<RepositoryFileList> {
+  return apiRequest<RepositoryFileList>(`/api/v1/repositories/${repositoryId}/files`);
 }
 
-export async function getRepositorySymbols(repositoryId: string): Promise<RepositorySymbolList> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}/symbols`, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch repository symbols");
-  }
-
-  return response.json();
+export function getRepositorySymbols(repositoryId: string): Promise<RepositorySymbolList> {
+  return apiRequest<RepositorySymbolList>(`/api/v1/repositories/${repositoryId}/symbols`);
 }
 
-export async function getRepositoryAnalysis(repositoryId: string): Promise<RepositoryAnalysis> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}/analysis`, {
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch repository analysis");
-  }
-
-  return response.json();
+export function getRepositoryAnalysis(repositoryId: string): Promise<RepositoryAnalysis> {
+  return apiRequest<RepositoryAnalysis>(`/api/v1/repositories/${repositoryId}/analysis`);
 }
 
-export async function getRepositoryGraph(repositoryId: string): Promise<RepositoryGraph> {
-  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${repositoryId}/graph`, {
-    cache: "no-store"
+export function getRepositoryGraph(repositoryId: string): Promise<RepositoryGraph> {
+  return apiRequest<RepositoryGraph>(`/api/v1/repositories/${repositoryId}/graph`);
+}
+
+export function getCriticalNodes(repositoryId: string, limit = 20): Promise<CriticalNodesResponse> {
+  return apiRequest<CriticalNodesResponse>(
+    `/api/v1/analytics/critical?${repositoryQuery(repositoryId)}&limit=${limit}`
+  );
+}
+
+export function getComponents(repositoryId: string): Promise<ConnectedComponentsResponse> {
+  return apiRequest<ConnectedComponentsResponse>(
+    `/api/v1/analytics/components?${repositoryQuery(repositoryId)}`
+  );
+}
+
+export function getCycles(repositoryId: string): Promise<CycleDetectionResponse> {
+  return apiRequest<CycleDetectionResponse>(
+    `/api/v1/analytics/cycles?${repositoryQuery(repositoryId)}`
+  );
+}
+
+export function getTopologicalOrder(repositoryId: string): Promise<TopologicalOrderResponse> {
+  return apiRequest<TopologicalOrderResponse>(
+    `/api/v1/analytics/topological-order?${repositoryQuery(repositoryId)}`
+  );
+}
+
+export function getDependencyPath(
+  repositoryId: string,
+  nodeId: string
+): Promise<DependencyPathResponse> {
+  return apiRequest<DependencyPathResponse>(
+    `/api/v1/analytics/path/${encodeURIComponent(nodeId)}?${repositoryQuery(repositoryId)}`
+  );
+}
+
+export function getImpactAnalysis(
+  repositoryId: string,
+  nodeId: string
+): Promise<ImpactAnalysisResponse> {
+  return apiRequest<ImpactAnalysisResponse>(
+    `/api/v1/analytics/impact/${encodeURIComponent(nodeId)}?${repositoryQuery(repositoryId)}`
+  );
+}
+
+export function getSimilarity(
+  repositoryId: string,
+  nodeId: string,
+  limit = 10
+): Promise<SimilarityRanking> {
+  const params = new URLSearchParams({ repositoryId, limit: String(limit) });
+  return apiRequest<SimilarityRanking>(
+    `/api/v1/intelligence/similarity/${encodeURIComponent(nodeId)}?${params}`
+  );
+}
+
+export function getClusters(
+  repositoryId: string,
+  nodeType = "function",
+  threshold = 0.5
+): Promise<ClusterResult> {
+  const params = new URLSearchParams({
+    repositoryId,
+    nodeType,
+    threshold: String(threshold)
   });
+  return apiRequest<ClusterResult>(`/api/v1/intelligence/clusters?${params}`);
+}
 
-  if (!response.ok) {
-    throw new Error("Unable to fetch repository graph");
-  }
+export function localizeFailure(payload: JsonPayload): Promise<BugLocalizationResult> {
+  return apiRequest<BugLocalizationResult>(
+    "/api/v1/intelligence/failures/localize",
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    },
+    "Unable to localize this failure."
+  );
+}
 
-  return response.json();
+export function createFailure(repositoryId: string, payload: JsonPayload): Promise<FailureRecord> {
+  return apiRequest<FailureRecord>(
+    `/api/v1/repositories/${repositoryId}/failures`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    },
+    "Unable to save the failure record."
+  );
+}
+
+export function getFailures(
+  repositoryId: string,
+  snapshotId?: string
+): Promise<FailureCollection> {
+  const suffix = snapshotId
+    ? `?${new URLSearchParams({ snapshotId }).toString()}`
+    : "";
+  return apiRequest<FailureCollection>(
+    `/api/v1/repositories/${repositoryId}/failures${suffix}`
+  );
+}
+
+export function confirmFailure(
+  failureId: string,
+  rootCauseNodeId: string,
+  notes: string
+): Promise<FailureRecord> {
+  return apiRequest<FailureRecord>(
+    `/api/v1/failures/${failureId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "RESOLVED",
+        confirmedRootCauseNodeIds: [rootCauseNodeId],
+        resolutionNotes: notes,
+        resolvedAt: new Date().toISOString()
+      })
+    },
+    "Unable to confirm the root cause."
+  );
+}
+
+export function queryExplanation(payload: JsonPayload): Promise<ExplanationResponse> {
+  return apiRequest<ExplanationResponse>(
+    "/api/v1/explanations/query",
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    },
+    "The explanation service is currently unavailable."
+  );
+}
+
+export async function getRepositoryWorkspace(
+  repositoryId: string
+): Promise<RepositoryWorkspaceData> {
+  const [summary, files, symbols, analysis, graph, critical, components, cycles, topologicalOrder] =
+    await Promise.all([
+      getRepositorySummary(repositoryId),
+      getRepositoryFiles(repositoryId),
+      getRepositorySymbols(repositoryId),
+      getRepositoryAnalysis(repositoryId),
+      getRepositoryGraph(repositoryId),
+      getCriticalNodes(repositoryId),
+      getComponents(repositoryId),
+      getCycles(repositoryId),
+      getTopologicalOrder(repositoryId)
+    ]);
+
+  const failures = await getFailures(repositoryId, summary.latestSnapshot?.snapshotId);
+  return {
+    summary,
+    files,
+    symbols,
+    analysis,
+    graph,
+    critical,
+    components,
+    cycles,
+    topologicalOrder,
+    failures
+  };
 }

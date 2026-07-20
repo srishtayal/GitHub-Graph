@@ -78,18 +78,18 @@ calls, inheritance, API routes, and resolvable module dependencies.
 ## 4. Current Audited Baseline
 
 The following status reflects the verified repository state after completion
-of the Phase 2 reliability and Phase 6 integration work.
+of the Phase 8 frontend and visualization work.
 
 | Phase | Current status | Main gap |
 |---|---|---|
 | 1. Scope and architecture | Substantially complete | Canonical product scope was spread across multiple documents. |
 | 2. Ingestion and indexing | Complete for the Python-first scope | Public-repository verification, bounded cloning, persistent snapshots, health checks, and startup retries are implemented. |
 | 3. Static extraction | Complete for Python | Java, JavaScript, and TypeScript deep parsing remain future work. |
-| 4. Code graph | Complete for Python analysis | Interactive graph exploration belongs to Phase 8. |
-| 5. Graph analytics | Complete at backend/API level | Frontend analytics views remain for Phase 8. |
-| 6. Similarity and bug localization | Complete at backend/API level | Interactive similarity and error-analysis views belong to Phase 8. |
-| 7. AI explanation | Complete at backend/API level | Conversation and explanation views belong to Phase 8. |
-| 8. Frontend and visualization | Partially started | Current UI shows extraction and graph previews, not a full explorer. |
+| 4. Code graph | Complete for Python analysis | Java, JavaScript, and TypeScript graph extraction remains future work. |
+| 5. Graph analytics | Complete | Public APIs and frontend dependency/impact/criticality/cycle views are implemented. |
+| 6. Similarity and bug localization | Complete | Public APIs plus similarity, clustering, localization, history, and confirmation UI are implemented. |
+| 7. AI explanation | Complete | Grounded public API and cited conversation interface are implemented. |
+| 8. Frontend and visualization | Complete for the single-repository scope | Server-backed repository catalog and report exports belong to Phase 9. |
 | 9. Production features | Partially started | Async jobs and persistence exist; auth, retries, caching, history UI, and large-repo controls are missing. |
 | 10. Placement polish | Partially started | Phase documents exist; benchmarks, case studies, video, and final architecture pack are missing. |
 
@@ -109,6 +109,9 @@ Verified baseline:
 - A Stage 4 clean-stack suite verifies real public ingestion, extraction/graph
   parity, all six analytics endpoints, Phase 6 workflows, frontend production
   build, and optional grounded AI citation integrity.
+- Phase 8 browser verification covers responsive landing/dashboard rendering,
+  graph search and inspection, dependency and impact traces, similarity,
+  localization and confirmation, and cited explanations.
 
 Resolved foundation gaps:
 
@@ -1339,7 +1342,7 @@ Suggested branch patterns:
 - [x] Durable failure history
 - [x] Phase 6 backend facade
 - [x] Real-service Phase 6 integration and persistence test
-- [ ] Analytics and intelligence frontend
+- [x] Analytics and intelligence frontend
 
 ### AI and visualization
 
@@ -1347,11 +1350,11 @@ Suggested branch patterns:
 - [x] Grounded explanation API
 - [x] Prompt-injection defenses
 - [x] AI citation and adversarial evaluation suite
-- [ ] Interactive graph explorer
-- [ ] Node detail panel
-- [ ] Similarity view
-- [ ] Error-analysis view
-- [ ] Conversation view
+- [x] Interactive graph explorer
+- [x] Node detail panel
+- [x] Similarity view
+- [x] Error-analysis view
+- [x] Conversation view
 
 ### Production and placement
 

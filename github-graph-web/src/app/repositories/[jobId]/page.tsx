@@ -1,5 +1,4 @@
-import { IngestionStatus } from "@/components/ingestion-status/ingestion-status";
-import { ResultSummary } from "@/components/result-summary/result-summary";
+import { RepositoryWorkspace } from "@/components/workspace/repository-workspace";
 
 export default async function RepositoryJobPage({
   params
@@ -8,12 +7,5 @@ export default async function RepositoryJobPage({
 }) {
   const { jobId } = await params;
 
-  return (
-    <main className="page-shell">
-      <section className="details-layout">
-        <IngestionStatus jobId={jobId} />
-        <ResultSummary jobId={jobId} />
-      </section>
-    </main>
-  );
+  return <RepositoryWorkspace jobId={jobId} />;
 }
