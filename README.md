@@ -55,3 +55,4 @@ This workspace now contains:
 4. persist job and snapshot state in PostgreSQL
 5. write initial file tree and manifest graph into Neo4j
 6. review Phase 4 graph docs in [PHASE_4.md](PHASE_4.md)
+7. review Phase 5 analytics docs in [PHASE_5.md](PHASE_5.md)

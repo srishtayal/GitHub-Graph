@@ -8,6 +8,7 @@ FastAPI analysis service for GitHub Graph.
 - Read cloned repositories from shared workspace
 - Extract file tree metadata
 - Parse Python classes, functions, imports, calls, inheritance, API routes, and module dependencies
+- Run graph analytics (DFS, BFS, components, topological sort, centrality, cycle detection)
 - Return normalized analysis payloads
 - Analyze graph similarity, clusters, and failure-localization evidence
 - Produce grounded Gemini explanations from precomputed graph-analysis evidence
@@ -25,7 +26,7 @@ Run the complete Python suite with:
 PYTHONPATH=. python -m unittest discover -s tests -v
 ```
 
-See [Phase 3](../PHASE_3.md) for the JSON contract, [Phase 4](../PHASE_4.md) for graph construction, and [Phase 5](../PHASE_5.md) for the approved Python analytics design.
+See [Phase 3](../PHASE_3.md) for the JSON contract, [Phase 4](../PHASE_4.md) for graph construction, and [Phase 5](../PHASE_5.md) for analytics endpoints and design.
 
 To run only the Phase 6 tests:
 

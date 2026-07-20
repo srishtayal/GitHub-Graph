@@ -13,6 +13,7 @@ app/analytics/traversal.py
 app/api/__init__.py
 app/api/routes/__init__.py
 app/api/routes/analysis.py
+app/api/routes/analytics.py
 app/api/routes/health.py
 app/core/__init__.py
 app/core/config.py
@@ -33,6 +34,7 @@ app/services/failure_history_store.py
 app/services/failure_path_parser.py
 app/services/filesystem_extractor.py
 app/services/graph_analytics_service.py
+app/services/graph_analyzer.py
 app/services/graph_feature_extractor.py
 app/services/graph_planner.py
 app/services/language_detector.py
@@ -54,6 +56,7 @@ github_graph_analysis.egg-info/dependency_links.txt
 github_graph_analysis.egg-info/requires.txt
 github_graph_analysis.egg-info/top_level.txt
 tests/test_analysis_route.py
+tests/test_analytics_route.py
 tests/test_bug_localizer.py
 tests/test_centrality.py
 tests/test_components.py
@@ -64,6 +67,7 @@ tests/test_failure_history_store.py
 tests/test_failure_path_parser.py
 tests/test_gemini_client.py
 tests/test_graph_analytics_service.py
+tests/test_graph_analyzer.py
 tests/test_graph_feature_extractor.py
 tests/test_graph_planner.py
 tests/test_graph_projection.py

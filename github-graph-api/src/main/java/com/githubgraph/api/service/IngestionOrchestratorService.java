@@ -7,6 +7,7 @@ import com.githubgraph.api.domain.ingestion.IngestionFailureCategory;
 import com.githubgraph.api.domain.ingestion.IngestionJobStatus;
 import com.githubgraph.api.dto.AnalysisServiceRequest;
 import com.githubgraph.api.dto.AnalysisServiceResponse;
+import com.githubgraph.api.dto.GraphAnalyticsRequest;
 import com.githubgraph.api.dto.CreateIngestionRequest;
 import com.githubgraph.api.dto.CreateIngestionResponse;
 import com.githubgraph.api.dto.FileSummaryResponse;
@@ -62,6 +63,7 @@ public class IngestionOrchestratorService {
     private final RepositoryCloneService repositoryCloneService;
     private final AnalysisClientService analysisClientService;
     private final RepositoryGraphService repositoryGraphService;
+    private final AnalyticsClientService analyticsClientService;
     private final ObjectMapper objectMapper;
     private final IngestionJobExecutor ingestionJobExecutor;
 
@@ -79,6 +81,7 @@ public class IngestionOrchestratorService {
             RepositoryCloneService repositoryCloneService,
             AnalysisClientService analysisClientService,
             RepositoryGraphService repositoryGraphService,
+            AnalyticsClientService analyticsClientService,
             ObjectMapper objectMapper,
             IngestionJobExecutor ingestionJobExecutor
     ) {
@@ -95,6 +98,7 @@ public class IngestionOrchestratorService {
         this.repositoryCloneService = repositoryCloneService;
         this.analysisClientService = analysisClientService;
         this.repositoryGraphService = repositoryGraphService;
+        this.analyticsClientService = analyticsClientService;
         this.objectMapper = objectMapper;
         this.ingestionJobExecutor = ingestionJobExecutor;
     }
@@ -186,6 +190,15 @@ public class IngestionOrchestratorService {
     public JsonNode getRepositoryGraph(String repositoryId) {
         RepositorySnapshotEntity snapshot = latestSnapshotFor(repositoryId);
         return repositoryGraphService.loadRepositoryGraph(UUID.fromString(repositoryId), snapshot);
+    }
+
+    public JsonNode getRepositoryAnalytics(String repositoryId, String nodeId, Integer maxDepth) {
+        JsonNode graph = getRepositoryGraph(repositoryId);
+        try {
+            return analyticsClientService.analyzeGraph(new GraphAnalyticsRequest(graph, nodeId, maxDepth));
+        } catch (IllegalArgumentException exception) {
+            throw new NotFoundException("Graph node not found: " + nodeId);
+        }
     }
 
     @Transactional

@@ -85,6 +85,9 @@ class IngestionOrchestratorServiceTest {
     private RepositoryGraphService repositoryGraphService;
 
     @Mock
+    private AnalyticsClientService analyticsClientService;
+
+    @Mock
     private IngestionJobExecutor ingestionJobExecutor;
 
     @Mock

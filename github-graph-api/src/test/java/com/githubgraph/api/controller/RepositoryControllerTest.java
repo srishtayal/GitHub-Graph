@@ -37,4 +37,36 @@ class RepositoryControllerTest {
                 .andExpect(jsonPath("$.nodes[0].id").value("repo:1"))
                 .andExpect(jsonPath("$.edges[0].type").value("BELONGS_TO"));
     }
+
+    @Test
+    void getAnalyticsReturnsInsightsPayload() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode analytics = objectMapper.readTree("""
+                {"insights":{"most_critical_functions":[]},"connected_components":{"total_components":1}}
+                """);
+
+        when(ingestionService.getRepositoryAnalytics("repo-123", null, 10)).thenReturn(analytics);
+
+        mockMvc.perform(get("/api/v1/repositories/repo-123/analytics"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.insights.most_critical_functions").isArray())
+                .andExpect(jsonPath("$.connected_components.total_components").value(1));
+    }
+
+    @Test
+    void getAnalyticsWithNodeReturnsNodeAnalysis() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode analytics = objectMapper.readTree("""
+                {"node_analysis":{"node_id":"file:a"},"insights":{"selected_node":{"id":"file:a"}}}
+                """);
+
+        when(ingestionService.getRepositoryAnalytics("repo-123", "a.py", 5)).thenReturn(analytics);
+
+        mockMvc.perform(get("/api/v1/repositories/repo-123/analytics")
+                        .param("nodeId", "a.py")
+                        .param("maxDepth", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.node_analysis.node_id").value("file:a"))
+                .andExpect(jsonPath("$.insights.selected_node.id").value("file:a"));
+    }
 }
