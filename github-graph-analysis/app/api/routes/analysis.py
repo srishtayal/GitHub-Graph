@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
+from app.core.exceptions import RepositoryLimitError
 from app.schemas.requests import AnalysisJobRequest
 from app.schemas.responses import AnalysisJobResponse
 from app.services.graph_planner import build_graph_payload
@@ -10,7 +11,10 @@ router = APIRouter(prefix="/internal/v1")
 
 @router.post("/analysis-jobs", response_model=AnalysisJobResponse)
 def analyze_repository(request: AnalysisJobRequest) -> AnalysisJobResponse:
-    directories, files, parsed = scan_repository(request.localPath)
+    try:
+        directories, files, parsed = scan_repository(request.localPath)
+    except RepositoryLimitError as exception:
+        raise HTTPException(status_code=413, detail=str(exception)) from exception
     graph = build_graph_payload(request.repositoryId, str(request.githubUrl), files, parsed)
     language_summary: dict[str, int] = {}
     for item in files:

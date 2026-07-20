@@ -43,3 +43,8 @@ github-graph:
     max-attempts: ${NEO4J_INITIALIZATION_MAX_ATTEMPTS:12}
     initial-backoff-millis: ${NEO4J_INITIALIZATION_INITIAL_BACKOFF_MILLIS:500}
     max-backoff-millis: ${NEO4J_INITIALIZATION_MAX_BACKOFF_MILLIS:5000}
+  auth:
+    enabled: ${GITHUB_GRAPH_AUTH_ENABLED:false}
+    token-secret: ${GITHUB_GRAPH_AUTH_TOKEN_SECRET:change-this-before-deployment}
+    token-ttl-seconds: ${GITHUB_GRAPH_AUTH_TOKEN_TTL_SECONDS:28800}
+    development-email: ${GITHUB_GRAPH_DEVELOPMENT_EMAIL:local@github-graph.dev}

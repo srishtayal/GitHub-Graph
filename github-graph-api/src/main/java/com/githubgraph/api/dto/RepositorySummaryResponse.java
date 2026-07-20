@@ -12,11 +12,13 @@ public record RepositorySummaryResponse(
 ) {
     public record LatestSnapshot(
             String snapshotId,
+            String ingestionJobId,
             String branchName,
             String commitSha,
             int totalFiles,
             int totalDirectories,
-            Map<String, Integer> languageSummary
+            Map<String, Integer> languageSummary,
+            String analyzedAt
     ) {
     }
 }

@@ -119,6 +119,11 @@ public class FailureHistoryService {
     public FailureRecordResponse update(String failureId, UpdateFailureRequest request) {
         FailureRecordEntity failure = failureRecordJpaRepository.findById(UUID.fromString(failureId))
                 .orElseThrow(() -> new NotFoundException("Failure record not found"));
+        // Loading the snapshot also enforces the authenticated user's repository access.
+        GraphLoaderService.LoadedGraph loaded = graphLoaderService.loadGraph(
+                failure.getRepository().getId().toString(),
+                failure.getSnapshot().getId().toString()
+        );
 
         if (request.status() != null) {
             String status = request.status().trim().toUpperCase(Locale.ROOT);
@@ -138,10 +143,6 @@ public class FailureHistoryService {
         }
 
         if (request.confirmedRootCauseNodeIds() != null) {
-            GraphLoaderService.LoadedGraph loaded = graphLoaderService.loadGraph(
-                    failure.getRepository().getId().toString(),
-                    failure.getSnapshot().getId().toString()
-            );
             List<String> rootCauseIds = distinct(request.confirmedRootCauseNodeIds());
             for (String nodeId : rootCauseIds) {
                 if (!loaded.graph().containsNode(nodeId)) {

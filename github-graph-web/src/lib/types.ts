@@ -2,6 +2,7 @@ export type CreateIngestionResponse = {
   jobId: string;
   repositoryId: string;
   status: string;
+  reused: boolean;
 };
 
 export type IngestionJob = {
@@ -10,6 +11,7 @@ export type IngestionJob = {
   status: string;
   errorMessage: string | null;
   errorCategory?: string | null;
+  retryCount: number;
   createdAt: string | null;
   startedAt: string | null;
   finishedAt: string | null;
@@ -17,11 +19,45 @@ export type IngestionJob = {
 
 export type RepositorySnapshot = {
   snapshotId: string;
+  ingestionJobId: string;
   branchName: string;
   commitSha: string;
   totalFiles: number;
   totalDirectories: number;
   languageSummary: Record<string, number>;
+  analyzedAt: string;
+};
+
+export type AuthUser = {
+  userId: string;
+  email: string;
+  displayName: string;
+};
+
+export type AuthResponse = {
+  accessToken: string;
+  user: AuthUser;
+  expiresInSeconds: number;
+};
+
+export type RepositoryCatalog = {
+  repositories: RepositorySummary[];
+};
+
+export type SnapshotHistory = {
+  snapshots: Array<{
+    snapshotId: string;
+    ingestionJobId: string;
+    branchName: string | null;
+    commitSha: string | null;
+    commitMessage: string | null;
+    commitAuthor: string | null;
+    committedAt: string | null;
+    analyzedAt: string;
+    totalFiles: number;
+    totalDirectories: number;
+    languageSummary: Record<string, number>;
+  }>;
 };
 
 export type RepositorySummary = {

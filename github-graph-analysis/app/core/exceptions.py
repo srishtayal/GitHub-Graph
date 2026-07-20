@@ -2,6 +2,10 @@ class AnalysisError(Exception):
     """Base exception for analysis failures."""
 
 
+class RepositoryLimitError(AnalysisError):
+    """Raised when a repository exceeds the configured analysis resource bounds."""
+
+
 class ExplanationError(AnalysisError):
     """Base exception for Phase 7 explanation failures."""
 

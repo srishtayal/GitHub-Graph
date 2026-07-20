@@ -27,6 +27,40 @@ curl http://localhost:8080/api/v1/repositories/<repositoryId>/analysis
 curl http://localhost:8080/api/v1/repositories/<repositoryId>/graph
 ```
 
+## Production authentication, history, and reports
+
+Set `GITHUB_GRAPH_AUTH_ENABLED=true` and a strong
+`GITHUB_GRAPH_AUTH_TOKEN_SECRET` before starting a deployed stack. Register or
+log in, then pass the returned token on all repository requests:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"user@example.com","password":"use-a-strong-password","displayName":"Example User"}'
+
+curl http://localhost:8080/api/v1/repositories \
+  -H 'Authorization: Bearer <accessToken>'
+
+curl http://localhost:8080/api/v1/repositories/<repositoryId>/snapshots \
+  -H 'Authorization: Bearer <accessToken>'
+
+curl -L http://localhost:8080/api/v1/repositories/<repositoryId>/exports/json \
+  -H 'Authorization: Bearer <accessToken>' \
+  -o repository-report.json
+
+curl -L "http://localhost:8080/api/v1/repositories/<repositoryId>/exports/pdf?snapshotId=<snapshotId>" \
+  -H 'Authorization: Bearer <accessToken>' \
+  -o repository-report.pdf
+```
+
+If a job fails, create a bounded asynchronous retry rather than re-submitting
+the same URL:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ingestion-jobs/<jobId>/retry \
+  -H 'Authorization: Bearer <accessToken>'
+```
+
 ## Analytics and similarity
 
 ```bash

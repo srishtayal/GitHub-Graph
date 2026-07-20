@@ -30,10 +30,14 @@ class ParsedRepository:
     module_dependencies: list[ModuleDependencyMetadata] = field(default_factory=list)
 
 
-def extract_static_code(root: Path, files: Iterable[FileMetadata]) -> ParsedRepository:
+def extract_static_code(root: Path, files: Iterable[FileMetadata], max_source_file_bytes: int = 2_000_000) -> ParsedRepository:
     parsed = ParsedRepository()
     for file_metadata in files:
-        if file_metadata.language != "Python" or file_metadata.isBinary:
+        if (
+            file_metadata.language != "Python"
+            or file_metadata.isBinary
+            or file_metadata.sizeBytes > max_source_file_bytes
+        ):
             continue
         code_file = parse_python_code_file(root / file_metadata.relativePath, file_metadata.relativePath)
         if code_file is not None:

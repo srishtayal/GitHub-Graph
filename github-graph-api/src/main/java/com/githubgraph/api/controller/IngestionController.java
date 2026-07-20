@@ -34,4 +34,10 @@ public class IngestionController {
     public IngestionJobResponse getIngestionJob(@PathVariable String jobId) {
         return ingestionService.getJob(jobId);
     }
+
+    @PostMapping("/ingestion-jobs/{jobId}/retry")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public CreateIngestionResponse retryIngestion(@PathVariable String jobId) {
+        return ingestionService.retryJob(jobId);
+    }
 }

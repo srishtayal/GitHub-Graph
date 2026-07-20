@@ -54,3 +54,17 @@ class ExplanationLimits(BaseModel):
             maxReferencedNodes=int(os.environ.get("EXPLANATION_MAX_REFERENCED_NODES", "80")),
             maxReferencedEdges=int(os.environ.get("EXPLANATION_MAX_REFERENCED_EDGES", "120")),
         )
+
+
+class AnalysisLimits(BaseModel):
+    """Resource bounds that keep one large repository from exhausting the worker."""
+
+    maxFiles: int = Field(default=15000, ge=100, le=200000)
+    maxSourceFileBytes: int = Field(default=2_000_000, ge=10_000, le=50_000_000)
+
+    @classmethod
+    def from_environment(cls) -> "AnalysisLimits":
+        return cls(
+            maxFiles=int(os.environ.get("ANALYSIS_MAX_FILES", "15000")),
+            maxSourceFileBytes=int(os.environ.get("ANALYSIS_MAX_SOURCE_FILE_BYTES", "2000000")),
+        )

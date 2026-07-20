@@ -1,6 +1,7 @@
 from hashlib import sha256
 from pathlib import Path
 
+from app.core.exceptions import RepositoryLimitError
 from app.schemas.responses import DirectoryMetadata, FileMetadata
 from app.services.language_detector import detect_language
 
@@ -24,10 +25,12 @@ def extract_directories(root: Path) -> list[DirectoryMetadata]:
     return directories
 
 
-def extract_files(root: Path) -> list[FileMetadata]:
+def extract_files(root: Path, max_files: int) -> list[FileMetadata]:
     files: list[FileMetadata] = []
 
     for path in sorted(_iter_files(root)):
+        if len(files) >= max_files:
+            raise RepositoryLimitError(f"Repository exceeds the {max_files} file analysis limit")
         relative_path = path.relative_to(root).as_posix()
         is_binary = _is_binary(path)
         files.append(

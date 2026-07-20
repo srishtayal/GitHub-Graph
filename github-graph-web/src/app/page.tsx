@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { RepoUrlForm } from "@/components/repo-url-form/repo-url-form";
 import { RecentWorkspaces } from "@/components/recent-workspaces/recent-workspaces";
+import { AccountPanel } from "@/components/account-panel/account-panel";
 
 export default function HomePage() {
   return (
@@ -22,7 +23,7 @@ export default function HomePage() {
           <a href="#capabilities">Capabilities</a>
           <a href="#workflow">How it works</a>
         </nav>
-        <span className="build-status"><i /> Python analysis live</span>
+        <div className="landing-account"><span className="build-status"><i /> Python analysis live</span><AccountPanel /></div>
       </header>
 
       <section className="landing-hero">

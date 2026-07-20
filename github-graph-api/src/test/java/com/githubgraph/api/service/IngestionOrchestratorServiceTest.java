@@ -88,6 +88,9 @@ class IngestionOrchestratorServiceTest {
     private AnalyticsClientService analyticsClientService;
 
     @Mock
+    private RepositoryCatalogService repositoryCatalogService;
+
+    @Mock
     private IngestionJobExecutor ingestionJobExecutor;
 
     @Mock
@@ -105,6 +108,8 @@ class IngestionOrchestratorServiceTest {
         );
         when(githubUrlValidator.validateAndNormalize(repoRef.normalizedUrl())).thenReturn(repoRef);
         when(repositoryJpaRepository.findByGithubUrl(repoRef.normalizedUrl())).thenReturn(Optional.empty());
+        when(ingestionJobJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(any(RepositoryEntity.class)))
+                .thenReturn(Optional.empty());
         when(repositoryJpaRepository.save(any(RepositoryEntity.class))).thenAnswer(invocation -> {
             RepositoryEntity repository = invocation.getArgument(0);
             repository.prePersist();

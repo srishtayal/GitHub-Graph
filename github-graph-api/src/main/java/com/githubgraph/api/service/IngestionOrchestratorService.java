@@ -64,6 +64,7 @@ public class IngestionOrchestratorService {
     private final AnalysisClientService analysisClientService;
     private final RepositoryGraphService repositoryGraphService;
     private final AnalyticsClientService analyticsClientService;
+    private final RepositoryCatalogService repositoryCatalogService;
     private final ObjectMapper objectMapper;
     private final IngestionJobExecutor ingestionJobExecutor;
 
@@ -82,6 +83,7 @@ public class IngestionOrchestratorService {
             AnalysisClientService analysisClientService,
             RepositoryGraphService repositoryGraphService,
             AnalyticsClientService analyticsClientService,
+            RepositoryCatalogService repositoryCatalogService,
             ObjectMapper objectMapper,
             IngestionJobExecutor ingestionJobExecutor
     ) {
@@ -99,6 +101,7 @@ public class IngestionOrchestratorService {
         this.analysisClientService = analysisClientService;
         this.repositoryGraphService = repositoryGraphService;
         this.analyticsClientService = analyticsClientService;
+        this.repositoryCatalogService = repositoryCatalogService;
         this.objectMapper = objectMapper;
         this.ingestionJobExecutor = ingestionJobExecutor;
     }
@@ -110,26 +113,45 @@ public class IngestionOrchestratorService {
 
         RepositoryEntity repository = repositoryJpaRepository.findByGithubUrl(repoRef.normalizedUrl())
                 .orElseGet(() -> createRepository(repoRef));
+        repositoryCatalogService.saveForCurrentUser(repository);
 
-        IngestionJobEntity job = new IngestionJobEntity();
-        job.setRepository(repository);
-        job.setSubmittedUrl(repoRef.normalizedUrl());
-        job.setStatus(IngestionJobStatus.PENDING.name());
-        ingestionJobJpaRepository.saveAndFlush(job);
+        Optional<IngestionJobEntity> latestJob = ingestionJobJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository);
+        if (latestJob.isPresent() && isReusable(latestJob.get(), repository)) {
+            return new CreateIngestionResponse(
+                    latestJob.get().getId().toString(), repository.getId().toString(), latestJob.get().getStatus(), true
+            );
+        }
+
+        IngestionJobEntity job = createJob(repository, repoRef.normalizedUrl(), 0);
 
         dispatchAfterCommit(job.getId());
-        return new CreateIngestionResponse(job.getId().toString(), repository.getId().toString(), job.getStatus());
+        return new CreateIngestionResponse(job.getId().toString(), repository.getId().toString(), job.getStatus(), false);
     }
 
     public IngestionJobResponse getJob(String jobId) {
         IngestionJobEntity job = ingestionJobJpaRepository.findById(UUID.fromString(jobId))
                 .orElseThrow(() -> new NotFoundException("Ingestion job not found"));
+        repositoryCatalogService.assertAccess(job.getRepository());
         return mapJob(job);
+    }
+
+    @Transactional
+    public CreateIngestionResponse retryJob(String jobId) {
+        IngestionJobEntity previous = ingestionJobJpaRepository.findById(UUID.fromString(jobId))
+                .orElseThrow(() -> new NotFoundException("Ingestion job not found"));
+        repositoryCatalogService.assertAccess(previous.getRepository());
+        if (!IngestionJobStatus.FAILED.name().equals(previous.getStatus())) {
+            throw new IllegalArgumentException("Only failed ingestion jobs can be retried");
+        }
+        IngestionJobEntity retry = createJob(previous.getRepository(), previous.getSubmittedUrl(), previous.getRetryCount() + 1);
+        dispatchAfterCommit(retry.getId());
+        return new CreateIngestionResponse(retry.getId().toString(), retry.getRepository().getId().toString(), retry.getStatus(), false);
     }
 
     public RepositorySummaryResponse getRepositorySummary(String repositoryId) {
         RepositoryEntity repository = repositoryJpaRepository.findById(UUID.fromString(repositoryId))
                 .orElseThrow(() -> new NotFoundException("Repository not found"));
+        repositoryCatalogService.assertAccess(repository);
         Optional<RepositorySnapshotEntity> latestSnapshot = repositorySnapshotJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository);
         return new RepositorySummaryResponse(
                 repository.getId().toString(),
@@ -389,6 +411,7 @@ public class IngestionOrchestratorService {
                 job.getStatus(),
                 job.getErrorMessage(),
                 job.getErrorCategory(),
+                job.getRetryCount(),
                 formatInstant(job.getCreatedAt()),
                 formatInstant(job.getStartedAt()),
                 formatInstant(job.getFinishedAt())
@@ -398,23 +421,46 @@ public class IngestionOrchestratorService {
     private RepositorySummaryResponse.LatestSnapshot mapSnapshot(RepositorySnapshotEntity snapshot) {
         return new RepositorySummaryResponse.LatestSnapshot(
                 snapshot.getId().toString(),
+                snapshot.getIngestionJob().getId().toString(),
                 snapshot.getBranchName(),
                 snapshot.getCommitSha(),
                 snapshot.getTotalFiles(),
                 snapshot.getTotalDirectories(),
-                readLanguageSummary(snapshot.getLanguageSummaryJson())
+                readLanguageSummary(snapshot.getLanguageSummaryJson()),
+                formatInstant(snapshot.getCreatedAt())
         );
     }
 
     private RepositorySnapshotEntity latestSnapshotFor(String repositoryId) {
         RepositoryEntity repository = repositoryJpaRepository.findById(UUID.fromString(repositoryId))
                 .orElseThrow(() -> new NotFoundException("Repository not found"));
+        repositoryCatalogService.assertAccess(repository);
         return repositorySnapshotJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository)
                 .orElseThrow(() -> new NotFoundException("Repository snapshot not found"));
     }
 
     private String formatInstant(Instant instant) {
         return instant != null ? instant.toString() : null;
+    }
+
+    private IngestionJobEntity createJob(RepositoryEntity repository, String submittedUrl, int retryCount) {
+        IngestionJobEntity job = new IngestionJobEntity();
+        job.setRepository(repository);
+        job.setSubmittedUrl(submittedUrl);
+        job.setStatus(IngestionJobStatus.PENDING.name());
+        job.setRetryCount(retryCount);
+        return ingestionJobJpaRepository.saveAndFlush(job);
+    }
+
+    private boolean isReusable(IngestionJobEntity job, RepositoryEntity repository) {
+        if (!IngestionJobStatus.COMPLETED.name().equals(job.getStatus())) {
+            return IngestionJobStatus.PENDING.name().equals(job.getStatus())
+                    || IngestionJobStatus.VALIDATING.name().equals(job.getStatus())
+                    || IngestionJobStatus.CLONING.name().equals(job.getStatus())
+                    || IngestionJobStatus.ANALYZING.name().equals(job.getStatus())
+                    || IngestionJobStatus.STORING.name().equals(job.getStatus());
+        }
+        return repositorySnapshotJpaRepository.findTopByRepositoryOrderByCreatedAtDesc(repository).isPresent();
     }
 
     private String parentPath(String relativePath) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -9,9 +10,11 @@ import {
   BrainCircuit,
   CheckCircle2,
   CircleDot,
+  Download,
   GitBranch,
   GitFork,
   LayoutDashboard,
+  History,
   LoaderCircle,
   Menu,
   MessageSquareText,
@@ -22,6 +25,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getIngestionJob, getRepositoryWorkspace } from "@/lib/api-client";
+import { downloadReport, retryIngestion } from "@/lib/api-client";
 import type {
   FailureRecord,
   GraphNode,
@@ -34,8 +38,9 @@ import { ExplanationView } from "./explanation-view";
 import { GraphExplorer } from "./graph-explorer";
 import { OverviewDashboard } from "./overview-dashboard";
 import { SimilarityView } from "./similarity-view";
+import { HistoryView } from "./history-view";
 
-type WorkspaceTab = "overview" | "graph" | "dependencies" | "similarity" | "errors" | "ask";
+type WorkspaceTab = "overview" | "graph" | "dependencies" | "similarity" | "errors" | "history" | "ask";
 
 const navigation: Array<{
   id: WorkspaceTab;
@@ -47,6 +52,7 @@ const navigation: Array<{
   { id: "dependencies", label: "Dependencies", icon: GitBranch },
   { id: "similarity", label: "Similarity", icon: Boxes },
   { id: "errors", label: "Error analysis", icon: SearchCode },
+  { id: "history", label: "Analysis history", icon: History },
   { id: "ask", label: "Ask the graph", icon: MessageSquareText }
 ];
 
@@ -55,6 +61,7 @@ type RepositoryWorkspaceProps = {
 };
 
 export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
+  const router = useRouter();
   const [job, setJob] = useState<IngestionJob | null>(null);
   const [data, setData] = useState<RepositoryWorkspaceData | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
@@ -62,6 +69,8 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
   const [message, setMessage] = useState("Connecting to the ingestion pipeline…");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [exporting, setExporting] = useState<"json" | "pdf" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,6 +157,22 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
     });
   }
 
+  async function retryFailedJob() {
+    setRetrying(true);
+    try {
+      const retry = await retryIngestion(jobId);
+      router.replace(`/repositories/${retry.jobId}`);
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  async function exportReport(format: "json" | "pdf") {
+    setExporting(format);
+    try { await downloadReport(data!.summary.repositoryId, format); }
+    finally { setExporting(null); }
+  }
+
   if (!data) {
     return (
       <main className="pipeline-page">
@@ -190,8 +215,8 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
             <span>Status</span><strong>{job?.status ?? "CONNECTING"}</strong>
           </div>
           {loadError ? (
-            <button className="secondary-button" onClick={() => window.location.reload()}>
-              <RefreshCw size={16} /> Retry connection
+            <button className="secondary-button" onClick={job?.status === "FAILED" ? retryFailedJob : () => window.location.reload()} disabled={retrying}>
+              <RefreshCw size={16} /> {job?.status === "FAILED" ? (retrying ? "Retrying…" : "Retry analysis") : "Retry connection"}
             </button>
           ) : null}
         </section>
@@ -257,6 +282,8 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
           </div>
           <div className="topbar-status">
             <span><i /> Synced</span>
+            <button className="export-button" onClick={() => exportReport("json")} disabled={exporting !== null}><Download size={15} /> {exporting === "json" ? "Exporting…" : "JSON"}</button>
+            <button className="export-button" onClick={() => exportReport("pdf")} disabled={exporting !== null}><Download size={15} /> {exporting === "pdf" ? "Exporting…" : "PDF"}</button>
             <a href={data.summary.githubUrl} target="_blank" rel="noreferrer">
               <GitFork size={16} /> View source
             </a>
@@ -303,6 +330,7 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
             onFailureSaved={updateFailure}
           />
         ) : null}
+        {activeTab === "history" ? <HistoryView repositoryId={data.summary.repositoryId} /> : null}
         {activeTab === "ask" ? (
           <ExplanationView
             repositoryId={data.summary.repositoryId}

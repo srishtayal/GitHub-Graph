@@ -38,6 +38,9 @@ public class IngestionJobEntity {
     @Column(name = "error_category")
     private String errorCategory;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
     @Column(name = "started_at")
     private Instant startedAt;
 
@@ -116,6 +119,9 @@ public class IngestionJobEntity {
     public void setErrorCategory(String errorCategory) {
         this.errorCategory = errorCategory;
     }
+
+    public int getRetryCount() { return retryCount; }
+    public void setRetryCount(int retryCount) { this.retryCount = retryCount; }
 
     public Instant getStartedAt() {
         return startedAt;

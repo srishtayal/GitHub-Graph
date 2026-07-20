@@ -6,6 +6,7 @@ public record IngestionJobResponse(
         String status,
         String errorMessage,
         String errorCategory,
+        int retryCount,
         String createdAt,
         String startedAt,
         String finishedAt

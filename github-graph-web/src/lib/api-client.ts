@@ -1,6 +1,8 @@
 import { env } from "./env";
 import type {
   BugLocalizationResult,
+  AuthResponse,
+  AuthUser,
   ClusterResult,
   ConnectedComponentsResponse,
   CreateIngestionResponse,
@@ -13,16 +15,24 @@ import type {
   ImpactAnalysisResponse,
   IngestionJob,
   RepositoryAnalysis,
+  RepositoryCatalog,
   RepositoryFileList,
   RepositoryGraph,
   RepositorySummary,
   RepositorySymbolList,
   RepositoryWorkspaceData,
   SimilarityRanking,
+  SnapshotHistory,
   TopologicalOrderResponse
 } from "./types";
 
 type JsonPayload = Record<string, unknown>;
+
+function authHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+  const token = window.localStorage.getItem("github-graph-access-token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function apiRequest<T>(
   path: string,
@@ -34,6 +44,7 @@ async function apiRequest<T>(
     ...options,
     headers: {
       ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...authHeaders(),
       ...options.headers
     }
   });
@@ -50,6 +61,40 @@ async function apiRequest<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function downloadReport(repositoryId: string, format: "json" | "pdf"): Promise<void> {
+  const response = await fetch(`${env.apiBaseUrl}/api/v1/repositories/${encodeURIComponent(repositoryId)}/exports/${format}`, {
+    headers: authHeaders()
+  });
+  if (!response.ok) throw new Error("Unable to export this repository report.");
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `github-graph-report.${format}`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function register(payload: { email: string; password: string; displayName: string }): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(payload) }, "Unable to create account.");
+}
+
+export function login(payload: { email: string; password: string }): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/api/v1/auth/login", { method: "POST", body: JSON.stringify(payload) }, "Unable to sign in.");
+}
+
+export function getCurrentUser(): Promise<AuthUser> {
+  return apiRequest<AuthUser>("/api/v1/auth/me", {}, "Unable to load account.");
+}
+
+export function getSavedRepositories(): Promise<RepositoryCatalog> {
+  return apiRequest<RepositoryCatalog>("/api/v1/repositories", {}, "Unable to load saved repositories.");
+}
+
+export function getSnapshotHistory(repositoryId: string): Promise<SnapshotHistory> {
+  return apiRequest<SnapshotHistory>(`/api/v1/repositories/${encodeURIComponent(repositoryId)}/snapshots`, {}, "Unable to load analysis history.");
 }
 
 function repositoryQuery(repositoryId: string): string {
@@ -73,6 +118,10 @@ export function getIngestionJob(jobId: string): Promise<IngestionJob> {
     {},
     "Unable to fetch the ingestion job."
   );
+}
+
+export function retryIngestion(jobId: string): Promise<CreateIngestionResponse> {
+  return apiRequest<CreateIngestionResponse>(`/api/v1/ingestion-jobs/${encodeURIComponent(jobId)}/retry`, { method: "POST" }, "Unable to retry repository ingestion.");
 }
 
 export function getRepositorySummary(repositoryId: string): Promise<RepositorySummary> {

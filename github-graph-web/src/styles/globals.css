@@ -4340,6 +4340,74 @@ code {
   }
 }
 
+.landing-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-panel { position: relative; }
+
+.account-trigger,
+.export-button {
+  border: 1px solid var(--line, #d6ddd9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink, #1e302c);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 7px 10px;
+}
+
+.account-form {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 250px;
+  z-index: 30;
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid var(--line, #d6ddd9);
+  border-radius: 12px;
+  background: #fffef9;
+  box-shadow: 0 14px 35px rgba(25, 53, 47, 0.16);
+}
+
+.account-form input,
+.account-form button:not(.text-button) {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #d6ddd9);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.account-form button:not(.text-button) { background: #176f61; color: white; border-color: #176f61; cursor: pointer; }
+.text-button { border: 0; background: transparent; color: #176f61; cursor: pointer; font: inherit; font-size: 0.78rem; }
+.account-message { position: absolute; right: 0; top: calc(100% + 10px); width: 220px; color: #176f61; }
+
+.history-view { padding: 32px; }
+.snapshot-list { display: grid; gap: 10px; margin-top: 22px; }
+.snapshot-card { display: flex; gap: 13px; align-items: flex-start; padding: 16px; border: 1px solid var(--line, #d6ddd9); border-radius: 12px; background: rgba(255,255,255,.72); }
+.snapshot-card > svg { color: #176f61; flex: 0 0 auto; }
+.snapshot-card p, .snapshot-card small { margin: 4px 0 0; color: #65746e; }
+.loading-line { display: flex; align-items: center; gap: 8px; color: #65746e; }
+.inline-error { color: #b3261e; }
+
+@media (max-width: 720px) {
+  .landing-account { gap: 6px; }
+  .landing-account .build-status { display: none; }
+  .topbar-status .export-button { padding: 6px 7px; font-size: 0; }
+  .topbar-status .export-button svg { margin: 0; }
+  .history-view { padding: 20px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

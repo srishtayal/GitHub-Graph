@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Clock3, GitBranch } from "lucide-react";
+import { getSavedRepositories } from "@/lib/api-client";
 
 type RecentWorkspace = {
   jobId: string;
@@ -17,7 +18,17 @@ export function RecentWorkspaces() {
 
   useEffect(() => {
     try {
-      setRecent(JSON.parse(window.localStorage.getItem("github-graph-recent") ?? "[]"));
+      const local = JSON.parse(window.localStorage.getItem("github-graph-recent") ?? "[]") as RecentWorkspace[];
+      getSavedRepositories().then((catalog) => {
+        const server = catalog.repositories.flatMap((repository) => repository.latestSnapshot ? [{
+          jobId: repository.latestSnapshot.ingestionJobId,
+          repositoryId: repository.repositoryId,
+          owner: repository.owner,
+          name: repository.name,
+          analyzedAt: repository.latestSnapshot.analyzedAt
+        }] : []);
+        setRecent([...server, ...local.filter((item) => !server.some((saved) => saved.repositoryId === item.repositoryId))].slice(0, 8));
+      }).catch(() => setRecent(local));
     } catch {
       setRecent([]);
     }

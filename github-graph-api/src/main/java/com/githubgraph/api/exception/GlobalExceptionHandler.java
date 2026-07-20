@@ -58,6 +58,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, Object> handleUnauthorized(UnauthorizedException exception) {
+        return Map.of(
+                "timestamp", Instant.now().toString(),
+                "error", "UNAUTHORIZED",
+                "message", exception.getMessage()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, Object> handleUnexpected(Exception exception) {
