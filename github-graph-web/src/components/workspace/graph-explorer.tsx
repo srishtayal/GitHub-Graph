@@ -13,6 +13,7 @@ import {
   type Node
 } from "@xyflow/react";
 import {
+  ArrowLeft,
   Filter,
   Focus,
   Layers3,
@@ -37,11 +38,13 @@ import type {
   RepositoryGraph
 } from "@/lib/types";
 import { NodeDetailPanel } from "./node-detail-panel";
+import { RepositoryProjectionExplorer } from "./repository-projection-explorer";
 
 const MAX_VISIBLE_NODES = 180;
 
 type GraphExplorerProps = {
   repositoryId: string;
+  repositoryName: string;
   graph: RepositoryGraph;
   critical: CriticalNodesResponse;
   selectedNode: GraphNode | null;
@@ -50,11 +53,48 @@ type GraphExplorerProps = {
 
 export function GraphExplorer({
   repositoryId,
+  repositoryName,
   graph,
   critical,
   selectedNode,
   onSelectNode
 }: GraphExplorerProps) {
+  const [detailed, setDetailed] = useState(false);
+
+  useEffect(() => {
+    setDetailed(false);
+  }, [repositoryId]);
+
+  if (!detailed) {
+    return (
+      <RepositoryProjectionExplorer
+        repositoryId={repositoryId}
+        repositoryName={repositoryName}
+        onOpenDetailed={() => setDetailed(true)}
+      />
+    );
+  }
+
+  return (
+    <DetailedGraphExplorer
+      repositoryId={repositoryId}
+      graph={graph}
+      critical={critical}
+      selectedNode={selectedNode}
+      onSelectNode={onSelectNode}
+      onOpenOverview={() => setDetailed(false)}
+    />
+  );
+}
+
+function DetailedGraphExplorer({
+  repositoryId,
+  graph,
+  critical,
+  selectedNode,
+  onSelectNode,
+  onOpenOverview
+}: Omit<GraphExplorerProps, "repositoryName"> & { onOpenOverview: () => void }) {
   const nodeTypes = useMemo(
     () => Array.from(new Set(graph.nodes.map((node) => node.type))).sort(),
     [graph.nodes]
@@ -272,6 +312,9 @@ export function GraphExplorer({
           <p>Search a symbol, inspect its relationships, then trace dependencies or impact.</p>
         </div>
         <div className="graph-toolbar">
+          <button className="toolbar-button" onClick={onOpenOverview}>
+            <ArrowLeft size={15} /> Repository overview
+          </button>
           <div className="graph-search">
             <Search size={17} />
             <input

@@ -24,6 +24,15 @@ intelligence workspace. The implementation is in `github-graph-web`.
 
 ### Interactive graph explorer
 
+- Repository overview is the default graph level, bounded to 15 major components.
+- Deterministic flat-package grouping exposes cohesive Python capability areas.
+- Directed layered layout communicates dependency flow rather than node-type lanes.
+- Component cards show purpose, file count, symbol count, and dependency emphasis.
+- Aggregated edge width and labels communicate relationship volume and type.
+- Hover and selection expose edge breakdowns backed by raw graph edge IDs.
+- Click-to-inspect and double-click/Open component drill into files and modules.
+- Repository/component breadcrumbs and an explanatory architecture legend.
+- Explicit Detailed graph action preserves the full symbol-level explorer.
 - React Flow canvas with pan, zoom, fit, minimap, and draggable nodes.
 - Stable node-type colors and edge-type colors.
 - Search by label, qualified name, relative path, route, and module.
@@ -89,6 +98,7 @@ intelligence workspace. The implementation is in `github-graph-web`.
 The frontend uses the existing Spring Boot APIs for:
 
 - repository summary, files, symbols, extraction, and graph;
+- bounded repository overview and component graph projections;
 - all six Phase 5 analytics;
 - Phase 6 similarity, clusters, localization, failures, and confirmation;
 - Phase 7 grounded explanation orchestration.
@@ -125,6 +135,8 @@ Browser verification covered:
 - dashboard rendering;
 - graph search, selection, detail, dependency highlighting, filters, and
   accessible fallback;
+- repository overview layout, aggregate relationship labels, component details,
+  and component drill-down;
 - DFS and BFS results;
 - function similarity and clustering;
 - stack localization, persistence, and root-cause confirmation;

@@ -46,6 +46,17 @@ public class GraphProjectionEngine {
             "source:src/fastapi", "FastAPI Core",
             "source:src/flask", "Flask Core"
     );
+    private static final Map<String, String> MODULE_AREA_NAMES = Map.ofEntries(
+            Map.entry("__init__", "Public API"),
+            Map.entry("signer", "Signing and Verification"),
+            Map.entry("timed", "Timed Signing"),
+            Map.entry("serializer", "Serialization"),
+            Map.entry("url_safe", "URL-Safe Serialization"),
+            Map.entry("encoding-json", "Encoding and JSON"),
+            Map.entry("exc", "Exception Model"),
+            Map.entry("exceptions", "Exception Model"),
+            Map.entry("errors", "Exception Model")
+    );
 
     public GraphProjectionResponse overview(String repositoryId, String snapshotId, GraphView graph) {
         List<ComponentGroup> groups = detectComponents(repositoryId, graph);
@@ -346,6 +357,7 @@ public class GraphProjectionEngine {
         }
 
         mergeSmallGroups(drafts, graph, "supporting-files", "Supporting Files");
+        splitFlatPythonPackages(drafts, graph);
         if (drafts.size() > OVERVIEW_MAX_NODES) {
             mergeOverflowGroups(drafts, graph);
         }
@@ -361,6 +373,73 @@ public class GraphProjectionEngine {
                 ))
                 .sorted(Comparator.comparing(ComponentGroup::id))
                 .toList();
+    }
+
+    private void splitFlatPythonPackages(Map<String, ComponentDraft> drafts, GraphView graph) {
+        List<String> sourceKeys = drafts.keySet().stream()
+                .filter(key -> key.startsWith("source:") && !key.equals("source:root"))
+                .toList();
+        for (String sourceKey : sourceKeys) {
+            ComponentDraft source = drafts.get(sourceKey);
+            if (source == null) {
+                continue;
+            }
+            String packageRoot = sourceKey.substring("source:".length());
+            long directPythonFiles = source.memberIds.stream()
+                    .map(graph::node)
+                    .filter(node -> node != null && isType(node, "file"))
+                    .map(this::relativePath)
+                    .filter(path -> directPythonModule(path, packageRoot) != null)
+                    .count();
+            if (directPythonFiles < 5) {
+                continue;
+            }
+
+            Map<String, ComponentDraft> areas = new TreeMap<>();
+            for (String memberId : source.memberIds) {
+                GraphNodeView node = graph.node(memberId);
+                String module = directPythonModule(relativePath(node), packageRoot);
+                String area = module == null ? "package-support" : moduleAreaKey(module);
+                String areaKey = "area:" + packageRoot + "/" + area;
+                areas.computeIfAbsent(
+                        areaKey,
+                        ignored -> new ComponentDraft(areaKey, moduleAreaDisplayName(area), "source-area")
+                ).memberIds.add(memberId);
+            }
+
+            if (areas.size() < 3) {
+                continue;
+            }
+            drafts.remove(sourceKey);
+            drafts.putAll(areas);
+        }
+    }
+
+    private String directPythonModule(String rawPath, String packageRoot) {
+        if (rawPath == null) {
+            return null;
+        }
+        String prefix = packageRoot + "/";
+        String path = normalizePath(rawPath);
+        if (!path.startsWith(prefix)) {
+            return null;
+        }
+        String remainder = path.substring(prefix.length());
+        if (remainder.contains("/") || !remainder.toLowerCase(Locale.ROOT).endsWith(".py")) {
+            return null;
+        }
+        return remainder.substring(0, remainder.length() - 3).toLowerCase(Locale.ROOT);
+    }
+
+    private String moduleAreaKey(String module) {
+        return module.equals("encoding") || module.equals("_json") ? "encoding-json" : module;
+    }
+
+    private String moduleAreaDisplayName(String area) {
+        if (area.equals("package-support")) {
+            return "Package Support";
+        }
+        return MODULE_AREA_NAMES.getOrDefault(area, humanize(area));
     }
 
     private void mergeSmallGroups(

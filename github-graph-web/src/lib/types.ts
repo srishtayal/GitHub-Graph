@@ -115,6 +115,57 @@ export type RepositoryGraph = {
   edges: GraphEdge[];
 };
 
+export type GraphProjectionNode = {
+  id: string;
+  displayName: string;
+  level: string;
+  category: string;
+  counts: {
+    files: number;
+    classes: number;
+    functions: number;
+    routes: number;
+  };
+  incomingDependencyCount: number;
+  outgoingDependencyCount: number;
+  criticalityScore: number;
+  childCount: number;
+  representatives: Array<{
+    id: string;
+    displayName: string;
+    type: string;
+  }>;
+  underlyingNodeIds: string[];
+  expandable: boolean;
+};
+
+export type GraphProjectionEdge = {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+  totalRelationshipCount: number;
+  countsByType: Record<string, number>;
+  underlyingEdgeIds: string[];
+};
+
+export type GraphProjection = {
+  repositoryId: string;
+  snapshotId: string;
+  level: "OVERVIEW" | "COMPONENT" | "FILE" | "NEIGHBORHOOD";
+  rootId: string | null;
+  suggestedMaximumNodes: number;
+  truncated: boolean;
+  totals: {
+    rawNodeCount: number;
+    rawEdgeCount: number;
+    projectedNodeCount: number;
+    projectedEdgeCount: number;
+  };
+  nodes: GraphProjectionNode[];
+  edges: GraphProjectionEdge[];
+};
+
 export type RepositoryAnalysis = {
   ingestionJobId: string;
   status: string;

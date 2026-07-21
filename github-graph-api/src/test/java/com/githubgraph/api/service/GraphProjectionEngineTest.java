@@ -142,6 +142,44 @@ class GraphProjectionEngineTest {
         assertEquals(1, packageNode.counts().functions());
     }
 
+    @Test
+    void overviewSplitsFlatPythonPackagesIntoDeterministicCapabilityAreas() {
+        GraphView flatPackageGraph = new GraphView(
+                List.of(
+                        node("repo-flat", "repo", "itsdangerous", Map.of()),
+                        file("file-init", "src/itsdangerous/__init__.py"),
+                        file("file-signer", "src/itsdangerous/signer.py"),
+                        file("file-timed", "src/itsdangerous/timed.py"),
+                        file("file-serializer", "src/itsdangerous/serializer.py"),
+                        file("file-url-safe", "src/itsdangerous/url_safe.py"),
+                        file("file-encoding", "src/itsdangerous/encoding.py"),
+                        file("file-json", "src/itsdangerous/_json.py"),
+                        file("file-exc", "src/itsdangerous/exc.py"),
+                        node("function-sign", "function", "sign", path("src/itsdangerous/signer.py")),
+                        node("function-timestamp", "function", "get_timestamp", path("src/itsdangerous/timed.py")),
+                        node("function-dumps", "function", "dumps", path("src/itsdangerous/serializer.py"))
+                ),
+                List.of(
+                        edge("edge-timed-signer", "function-timestamp", "function-sign", "CALLS"),
+                        edge("edge-serializer-signer", "function-dumps", "function-sign", "CALLS")
+                )
+        );
+
+        GraphProjectionResponse first = engine.overview(REPOSITORY_ID, SNAPSHOT_ID, flatPackageGraph);
+        GraphProjectionResponse second = engine.overview(REPOSITORY_ID, SNAPSHOT_ID, flatPackageGraph);
+
+        assertEquals(first, second);
+        assertEquals(7, first.nodes().size());
+        ProjectedNode signing = nodeNamed(first, "Signing and Verification");
+        ProjectedNode timed = nodeNamed(first, "Timed Signing");
+        ProjectedNode serialization = nodeNamed(first, "Serialization");
+        ProjectedNode encoding = nodeNamed(first, "Encoding and JSON");
+        assertEquals(2, encoding.counts().files());
+        assertEquals(1, signing.counts().functions());
+        assertEquals(1, edge(first, timed.id(), signing.id()).totalRelationshipCount());
+        assertEquals(1, edge(first, serialization.id(), signing.id()).countsByType().get("CALLS"));
+    }
+
     private ProjectedNode nodeNamed(GraphProjectionResponse response, String displayName) {
         ProjectedNode node = response.nodes().stream()
                 .filter(candidate -> candidate.displayName().equals(displayName))

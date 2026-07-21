@@ -35,7 +35,10 @@ Overview components are deterministic. Source files are grouped by `src/`
 packages, conventional Python packages, or top-level directories. `tests/`,
 `docs/`, and build/configuration files receive dedicated groups; very small or
 overflow groups are combined deterministically. Internal group relationships
-are omitted from the parent view.
+are omitted from the parent view. Flat Python packages with at least five peer
+modules are split into stable module capability areas; common concerns such as
+signing, timed signing, serialization, URL-safe serialization, encoding/JSON,
+and exceptions receive readable labels without using an AI classifier.
 
 Base path:
 

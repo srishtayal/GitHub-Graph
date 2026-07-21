@@ -296,6 +296,7 @@ export function RepositoryWorkspace({ jobId }: RepositoryWorkspaceProps) {
         {activeTab === "graph" ? (
           <GraphExplorer
             repositoryId={data.summary.repositoryId}
+            repositoryName={data.summary.name}
             graph={data.graph}
             critical={data.critical}
             selectedNode={selectedNode}

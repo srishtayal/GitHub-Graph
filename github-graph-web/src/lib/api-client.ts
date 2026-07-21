@@ -12,6 +12,7 @@ import type {
   ExplanationResponse,
   FailureCollection,
   FailureRecord,
+  GraphProjection,
   ImpactAnalysisResponse,
   IngestionJob,
   RepositoryAnalysis,
@@ -142,6 +143,25 @@ export function getRepositoryAnalysis(repositoryId: string): Promise<RepositoryA
 
 export function getRepositoryGraph(repositoryId: string): Promise<RepositoryGraph> {
   return apiRequest<RepositoryGraph>(`/api/v1/repositories/${repositoryId}/graph`);
+}
+
+export function getRepositoryGraphOverview(repositoryId: string): Promise<GraphProjection> {
+  return apiRequest<GraphProjection>(
+    `/api/v1/repositories/${encodeURIComponent(repositoryId)}/graph/views/overview`,
+    {},
+    "Unable to load the repository overview."
+  );
+}
+
+export function getRepositoryGraphComponent(
+  repositoryId: string,
+  componentId: string
+): Promise<GraphProjection> {
+  return apiRequest<GraphProjection>(
+    `/api/v1/repositories/${encodeURIComponent(repositoryId)}/graph/views/components/${encodeURIComponent(componentId)}`,
+    {},
+    "Unable to open this repository component."
+  );
 }
 
 export function getCriticalNodes(repositoryId: string, limit = 20): Promise<CriticalNodesResponse> {

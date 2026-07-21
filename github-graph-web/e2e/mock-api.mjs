@@ -144,6 +144,10 @@ const server = createServer(async (request, response) => {
     };
   } else if (path === `/api/v1/repositories/${repositoryId}/analysis`) {
     payload = analysisPayload();
+  } else if (path === `/api/v1/repositories/${repositoryId}/graph/views/overview`) {
+    payload = overviewProjectionPayload();
+  } else if (path.startsWith(`/api/v1/repositories/${repositoryId}/graph/views/components/`)) {
+    payload = componentProjectionPayload(decodeURIComponent(path.split("/").pop()));
   } else if (path === `/api/v1/repositories/${repositoryId}/graph`) {
     payload = graph;
   } else if (path === "/api/v1/analytics/critical") {
@@ -332,6 +336,101 @@ function analysisPayload() {
     inheritance: [],
     apiRoutes: [],
     moduleDependencies: []
+  };
+}
+
+function overviewProjectionPayload() {
+  const components = [
+    projectionNode("component-routes", "HTTP Interface", "source-area", 1, 1, 2, 0.25, ["file-api"]),
+    projectionNode("component-auth", "Authentication", "source-area", 1, 3, 4, 0.58, ["file-auth", "fn-login"]),
+    projectionNode("component-data", "Data Access", "source-area", 1, 2, 3, 0.5, ["file-db", "fn-connect"]),
+    projectionNode("component-external", "External Dependencies", "external-dependencies", 0, 0, 2, 0.17, ["module-jwt", "module-db"])
+  ];
+  return projectionPayload("OVERVIEW", "repo", components, [
+    projectionEdge("projection-edge-routes-auth", "component-routes", "component-auth", { USES: 1 }),
+    projectionEdge("projection-edge-auth-data", "component-auth", "component-data", { CALLS: 2, IMPORTS: 1 }),
+    projectionEdge("projection-edge-auth-external", "component-auth", "component-external", { IMPORTS: 1, USES: 1 })
+  ]);
+}
+
+function componentProjectionPayload(componentId) {
+  const componentFiles = {
+    "component-routes": ["file-api"],
+    "component-auth": ["file-auth", "file-db", "module-jwt"],
+    "component-data": ["file-db", "module-db"],
+    "component-external": ["module-jwt", "module-db"]
+  }[componentId] ?? ["file-auth"];
+  const projectedNodes = componentFiles.map((id, index) => {
+    const raw = nodeMap.get(id);
+    return projectionNode(
+      id,
+      raw?.label ?? id,
+      raw?.type ?? "file",
+      raw?.type === "file" ? 1 : 0,
+      raw?.type === "file" ? 3 : 0,
+      index ? 1 : 2,
+      index ? 0.2 : 0.4,
+      [id]
+    );
+  });
+  const projectedEdges = projectedNodes.length > 1
+    ? projectedNodes.slice(1).map((item, index) =>
+        projectionEdge(`component-edge-${index}`, projectedNodes[0].id, item.id, { IMPORTS: 1 })
+      )
+    : [];
+  return projectionPayload("COMPONENT", componentId, projectedNodes, projectedEdges);
+}
+
+function projectionPayload(level, rootId, projectedNodes, projectedEdges) {
+  return {
+    repositoryId,
+    snapshotId,
+    level,
+    rootId,
+    suggestedMaximumNodes: level === "OVERVIEW" ? 15 : 40,
+    truncated: false,
+    totals: {
+      rawNodeCount: nodes.length,
+      rawEdgeCount: edges.length,
+      projectedNodeCount: projectedNodes.length,
+      projectedEdgeCount: projectedEdges.length
+    },
+    nodes: projectedNodes,
+    edges: projectedEdges
+  };
+}
+
+function projectionNode(id, displayName, category, files, symbols, dependencies, criticalityScore, representatives) {
+  return {
+    id,
+    displayName,
+    level: category === "file" || category === "module" ? category.toUpperCase() : "COMPONENT",
+    category,
+    counts: { files, classes: 0, functions: symbols, routes: 0 },
+    incomingDependencyCount: Math.floor(dependencies / 2),
+    outgoingDependencyCount: Math.ceil(dependencies / 2),
+    criticalityScore,
+    childCount: Math.max(files, 1),
+    representatives: representatives.map((referenceId) => ({
+      id: referenceId,
+      displayName: nodeMap.get(referenceId)?.label ?? referenceId,
+      type: nodeMap.get(referenceId)?.type ?? "file"
+    })),
+    underlyingNodeIds: representatives,
+    expandable: true
+  };
+}
+
+function projectionEdge(id, source, target, countsByType) {
+  const totalRelationshipCount = Object.values(countsByType).reduce((sum, count) => sum + count, 0);
+  return {
+    id,
+    source,
+    target,
+    type: "AGGREGATED",
+    totalRelationshipCount,
+    countsByType,
+    underlyingEdgeIds: Array.from({ length: totalRelationshipCount }, (_, index) => `${id}-raw-${index}`)
   };
 }
 

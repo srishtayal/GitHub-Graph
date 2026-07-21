@@ -143,5 +143,13 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8180 npm run dev -- --port 4173
 ```
 
 Open `http://127.0.0.1:4173/repositories/phase8-demo`. The fixture supports
-graph analytics, similarity, clustering, failure localization and persistence,
-root-cause confirmation, and grounded explanation citations.
+repository/component graph projections, graph analytics, similarity,
+clustering, failure localization and persistence, root-cause confirmation, and
+grounded explanation citations. The frontend unit suite also verifies
+deterministic directed projection layout and aggregate edge labels:
+
+```bash
+cd github-graph-web
+npm test
+npm run build
+```
