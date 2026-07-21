@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "e2e:mock-api": "node e2e/mock-api.mjs",
+    "test": "vitest run",
     "start": "next start",
     "lint": "next lint"
   },
@@ -24,7 +25,8 @@
     "@types/react-dom": "18.3.1",
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.20",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "3.2.7"
   },
   "overrides": {
     "postcss": "8.5.10"

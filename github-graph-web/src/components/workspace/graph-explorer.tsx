@@ -23,11 +23,14 @@ import {
 import { getDependencyPath, getImpactAnalysis } from "@/lib/api-client";
 import {
   edgeMeta,
-  graphNeighborhood,
   nodeMeta,
   nodePath,
   nodeQualifiedName
 } from "@/lib/graph-utils";
+import {
+  defaultEnabledEdgeTypes,
+  selectVisibleGraph
+} from "@/lib/graph-visibility";
 import type {
   CriticalNodesResponse,
   GraphNode,
@@ -60,8 +63,8 @@ export function GraphExplorer({
     () => Array.from(new Set(graph.edges.map((edge) => edge.type))).sort(),
     [graph.edges]
   );
-  const [enabledNodeTypes, setEnabledNodeTypes] = useState(new Set(nodeTypes));
-  const [enabledEdgeTypes, setEnabledEdgeTypes] = useState(new Set(edgeTypes));
+  const [enabledNodeTypes, setEnabledNodeTypes] = useState(() => new Set(nodeTypes));
+  const [enabledEdgeTypes, setEnabledEdgeTypes] = useState(() => defaultEnabledEdgeTypes(edgeTypes));
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -73,8 +76,8 @@ export function GraphExplorer({
 
   useEffect(() => {
     setEnabledNodeTypes(new Set(nodeTypes));
-    setEnabledEdgeTypes(new Set(edgeTypes));
-  }, [edgeTypes, nodeTypes]);
+    setEnabledEdgeTypes(defaultEnabledEdgeTypes(edgeTypes));
+  }, [edgeTypes, nodeTypes, repositoryId]);
 
   const searchResults = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
@@ -89,16 +92,20 @@ export function GraphExplorer({
       .slice(0, 9);
   }, [deferredQuery, graph.nodes]);
 
-  const visibleNodeIds = useMemo(() => {
-    const eligible = graph.nodes.filter((node) => enabledNodeTypes.has(node.type));
-    if ((focusMode || eligible.length > MAX_VISIBLE_NODES) && selectedNode) {
-      const neighborhood = graphNeighborhood(graph, selectedNode.id, focusMode ? 2 : 1);
-      return new Set(
-        eligible.filter((node) => neighborhood.has(node.id)).map((node) => node.id)
-      );
-    }
-    return new Set(eligible.slice(0, MAX_VISIBLE_NODES).map((node) => node.id));
-  }, [enabledNodeTypes, focusMode, graph, selectedNode]);
+  const visibleGraph = useMemo(
+    () =>
+      selectVisibleGraph({
+        graph,
+        enabledNodeTypes,
+        enabledEdgeTypes,
+        criticalNodeIds: critical.nodes.map((item) => item.node.id),
+        selectedNodeId: selectedNode?.id,
+        focusMode,
+        maxVisibleNodes: MAX_VISIBLE_NODES
+      }),
+    [critical.nodes, enabledEdgeTypes, enabledNodeTypes, focusMode, graph, selectedNode?.id]
+  );
+  const visibleNodeIds = visibleGraph.nodeIds;
 
   const flowNodes = useMemo<Node[]>(() => {
     const visible = graph.nodes.filter((node) => visibleNodeIds.has(node.id));
@@ -150,13 +157,7 @@ export function GraphExplorer({
 
   const flowEdges = useMemo<Edge[]>(
     () =>
-      graph.edges
-        .filter(
-          (edge) =>
-            visibleNodeIds.has(edge.source) &&
-            visibleNodeIds.has(edge.target) &&
-            enabledEdgeTypes.has(edge.type)
-        )
+      visibleGraph.edges
         .map((edge) => {
           const highlighted =
             highlightedIds.has(edge.source) && highlightedIds.has(edge.target);
@@ -182,7 +183,7 @@ export function GraphExplorer({
             labelBgStyle: { fill: "#fffdf7", fillOpacity: 0.9 }
           };
         }),
-    [enabledEdgeTypes, graph.edges, highlightedIds, visibleNodeIds]
+    [highlightedIds, visibleGraph.edges]
   );
 
   async function runAnalysis(mode: "trace" | "impact") {
@@ -231,7 +232,36 @@ export function GraphExplorer({
     });
   }
 
-  const degraded = graph.nodes.length > visibleNodeIds.size;
+  function selectAllFilters() {
+    setEnabledNodeTypes(new Set(nodeTypes));
+    setEnabledEdgeTypes(new Set(edgeTypes));
+  }
+
+  function clearAllFilters() {
+    setEnabledNodeTypes(new Set());
+    setEnabledEdgeTypes(new Set());
+  }
+
+  function resetFilters() {
+    setEnabledNodeTypes(new Set(nodeTypes));
+    setEnabledEdgeTypes(defaultEnabledEdgeTypes(edgeTypes));
+  }
+
+  const edgeGuidance =
+    flowNodes.length === 0
+      ? "No node types are selected. Reset filters or select the node types you want to inspect."
+      : graph.edges.length === 0
+        ? "No relationships were extracted for this repository snapshot."
+        : enabledEdgeTypes.size === 0
+          ? "No edge types are selected. Enable Imports, Calls, Inherits, Uses, or Belongs to."
+          : flowEdges.length === 0
+            ? "No enabled relationships connect the visible nodes. Select a node, widen the node filters, or reset filters."
+            : null;
+
+  const eligibleNodeCount = graph.nodes.filter((node) => enabledNodeTypes.has(node.type)).length;
+  const degraded =
+    eligibleNodeCount > visibleNodeIds.size &&
+    (eligibleNodeCount > MAX_VISIBLE_NODES || focusMode);
 
   return (
     <div className="workspace-view graph-view animate-in">
@@ -284,6 +314,11 @@ export function GraphExplorer({
 
       {filtersOpen ? (
         <div className="filter-drawer">
+          <div className="filter-actions" aria-label="Graph filter actions">
+            <button onClick={selectAllFilters}>Select all</button>
+            <button onClick={clearAllFilters}>Clear all</button>
+            <button onClick={resetFilters}>Reset filters</button>
+          </div>
           <div>
             <span><Filter size={14} /> Node types</span>
             {nodeTypes.map((type) => (
@@ -315,12 +350,19 @@ export function GraphExplorer({
         </div>
       ) : null}
 
+      <div className="graph-statistics" aria-label="Visible graph statistics">
+        <span><strong>{flowNodes.length}</strong> visible nodes</span>
+        <span><strong>{flowEdges.length}</strong> visible edges</span>
+        <span><strong>{graph.edges.length}</strong> total graph edges</span>
+      </div>
+
       <div className={`graph-stage ${selectedNode ? "has-detail" : ""}`}>
         <div className="graph-canvas">
           {degraded ? (
             <div className="degradation-note">
-              Showing {visibleNodeIds.size} of {graph.nodes.length} nodes for smooth rendering.
-              Select a node to explore its neighborhood.
+              {focusMode
+                ? `Showing the ${visibleNodeIds.size}-node neighborhood around ${selectedNode?.label ?? "the selected node"}.`
+                : `Showing a connected ${visibleNodeIds.size}-node selection from ${eligibleNodeCount} eligible nodes for smooth rendering.`}
             </div>
           ) : null}
           {highlightLabel ? (
@@ -335,6 +377,12 @@ export function GraphExplorer({
             </button>
           ) : null}
           {actionError ? <p className="inline-error">{actionError}</p> : null}
+          {edgeGuidance ? (
+            <div className="graph-empty-guidance" role="status">
+              <strong>No relationships to display</strong>
+              <span>{edgeGuidance}</span>
+            </div>
+          ) : null}
           <ReactFlow
             nodes={flowNodes}
             edges={flowEdges}
