@@ -15,7 +15,7 @@ public record AppProperties(
     @ConstructorBinding
     public AppProperties(
             Analysis analysis,
-            CloneProperties cloneProperties,
+            @Name("clone") CloneProperties cloneProperties,
             Github github,
             Neo4jInitialization neo4jInitialization,
             Auth auth

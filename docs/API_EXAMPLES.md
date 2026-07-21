@@ -27,6 +27,22 @@ curl http://localhost:8080/api/v1/repositories/<repositoryId>/analysis
 curl http://localhost:8080/api/v1/repositories/<repositoryId>/graph
 ```
 
+## Progressive graph views
+
+Start with the compact architecture overview. Use a returned component ID to
+open its files/modules, then use a returned file ID to inspect its symbols:
+
+```bash
+curl http://localhost:8080/api/v1/repositories/<repositoryId>/graph/views/overview
+curl http://localhost:8080/api/v1/repositories/<repositoryId>/graph/views/components/<componentId>
+curl http://localhost:8080/api/v1/repositories/<repositoryId>/graph/views/files/<fileId>
+curl "http://localhost:8080/api/v1/repositories/<repositoryId>/graph/neighborhood/<nodeId>?depth=2"
+```
+
+Projected edges expose `totalRelationshipCount`, `countsByType`, and
+`underlyingEdgeIds`. This allows the UI to show one architectural relationship
+while preserving a trace back to every raw Neo4j edge.
+
 ## Production authentication, history, and reports
 
 Set `GITHUB_GRAPH_AUTH_ENABLED=true` and a strong

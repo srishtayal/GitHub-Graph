@@ -5,6 +5,8 @@ import com.githubgraph.api.dto.FileSummaryResponse;
 import com.githubgraph.api.dto.ImportSummaryResponse;
 import com.githubgraph.api.dto.RepositorySummaryResponse;
 import com.githubgraph.api.dto.SymbolSummaryResponse;
+import com.githubgraph.api.dto.graph.GraphProjectionResponse;
+import com.githubgraph.api.service.GraphProjectionService;
 import com.githubgraph.api.service.IngestionOrchestratorService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,9 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class RepositoryController {
 
     private final IngestionOrchestratorService ingestionService;
+    private final GraphProjectionService graphProjectionService;
 
-    public RepositoryController(IngestionOrchestratorService ingestionService) {
+    public RepositoryController(
+            IngestionOrchestratorService ingestionService,
+            GraphProjectionService graphProjectionService
+    ) {
         this.ingestionService = ingestionService;
+        this.graphProjectionService = graphProjectionService;
     }
 
     @GetMapping("/{repositoryId}")
@@ -50,6 +57,36 @@ public class RepositoryController {
     @GetMapping("/{repositoryId}/graph")
     public JsonNode getGraph(@PathVariable String repositoryId) {
         return ingestionService.getRepositoryGraph(repositoryId);
+    }
+
+    @GetMapping("/{repositoryId}/graph/views/overview")
+    public GraphProjectionResponse getGraphOverview(@PathVariable String repositoryId) {
+        return graphProjectionService.overview(repositoryId);
+    }
+
+    @GetMapping("/{repositoryId}/graph/views/components/{componentId}")
+    public GraphProjectionResponse getGraphComponent(
+            @PathVariable String repositoryId,
+            @PathVariable String componentId
+    ) {
+        return graphProjectionService.component(repositoryId, componentId);
+    }
+
+    @GetMapping("/{repositoryId}/graph/views/files/{fileId}")
+    public GraphProjectionResponse getGraphFile(
+            @PathVariable String repositoryId,
+            @PathVariable String fileId
+    ) {
+        return graphProjectionService.file(repositoryId, fileId);
+    }
+
+    @GetMapping("/{repositoryId}/graph/neighborhood/{nodeId}")
+    public GraphProjectionResponse getGraphNeighborhood(
+            @PathVariable String repositoryId,
+            @PathVariable String nodeId,
+            @RequestParam(required = false, defaultValue = "2") int depth
+    ) {
+        return graphProjectionService.neighborhood(repositoryId, nodeId, depth);
     }
 
     @GetMapping("/{repositoryId}/analytics")

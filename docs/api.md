@@ -1,5 +1,42 @@
 # Analytics API
 
+## Repository graph projections
+
+Base path:
+
+`/api/v1/repositories/{repositoryId}/graph`
+
+The projection endpoints resolve the repository's latest accessible snapshot
+and build compact server-side views. The browser does not need to download the
+complete raw Neo4j graph.
+
+```text
+GET /views/overview
+GET /views/components/{componentId}
+GET /views/files/{fileId}
+GET /neighborhood/{nodeId}?depth=2
+```
+
+Projection levels have bounded suggested sizes: overview 15 nodes, component
+40 nodes, file 80 nodes, and neighborhood 200 nodes with depth limited to 0-5.
+The `truncated` field reports when a safety cap was reached.
+
+Every response includes:
+
+- repository and snapshot IDs;
+- projection level and expandable root ID;
+- raw and projected node/edge totals;
+- node file, class, function, and route counts;
+- incoming/outgoing dependency counts and normalized criticality;
+- representative raw nodes and complete underlying node IDs;
+- aggregated edges with per-type counts and underlying raw edge IDs.
+
+Overview components are deterministic. Source files are grouped by `src/`
+packages, conventional Python packages, or top-level directories. `tests/`,
+`docs/`, and build/configuration files receive dedicated groups; very small or
+overflow groups are combined deterministically. Internal group relationships
+are omitted from the parent view.
+
 Base path:
 
 `/api/v1/analytics`
